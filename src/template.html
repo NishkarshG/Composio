@@ -1,0 +1,574 @@
+<title>Approval Path</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one working surface. A narrow rail lists the library; the main pane shows the overview ladder or one guide laid out as a path (stages, owners, evidence). */
+:root {
+  --bg: #edf0f3;
+  --surface: #ffffff;
+  --surface-2: #f5f7f9;
+  --fg: #131c26;
+  --muted: #536270;
+  --line: #d3dae1;
+  --accent: #0a5f7a;
+  --accent-ink: #ffffff;
+  --accent-soft: #dbedf3;
+  --ok: #1d7545;
+  --ok-bg: #dff1e6;
+  --warn: #8f5a00;
+  --warn-bg: #fbeccb;
+  --bad: #ad2f1d;
+  --bad-bg: #f9dfda;
+  --f-display: "Bricolage Grotesque", "IBM Plex Sans", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c131a; --surface: #131c25; --surface-2: #19242f; --fg: #e4ebf1; --muted: #92a2b1; --line: #27353f;
+    --accent: #63c4e0; --accent-ink: #06222b; --accent-soft: #11313c;
+    --ok: #6fd09a; --ok-bg: #12301f; --warn: #f0b95a; --warn-bg: #352708; --bad: #f09484; --bad-bg: #38170f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0c131a; --surface: #131c25; --surface-2: #19242f; --fg: #e4ebf1; --muted: #92a2b1; --line: #27353f;
+  --accent: #63c4e0; --accent-ink: #06222b; --accent-soft: #11313c;
+  --ok: #6fd09a; --ok-bg: #12301f; --warn: #f0b95a; --warn-bg: #352708; --bad: #f09484; --bad-bg: #38170f;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 56px;
+}
+a { color: var(--accent); text-underline-offset: 2px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3 { font-family: var(--f-display); margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+p { margin: 0; }
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 20px; }
+.mono { font-family: var(--f-mono); font-size: 0.86em; }
+.muted { color: var(--muted); }
+
+/* masthead */
+.mast { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 24px; }
+.brand { font-family: var(--f-display); font-weight: 700; font-size: 22px; letter-spacing: -0.02em; text-decoration: none; color: var(--fg); background: none; border: 0; padding: 0; }
+.brand span { color: var(--accent); }
+.tag { color: var(--muted); font-size: 13.5px; max-width: 62ch; }
+
+/* lookup */
+.lookup { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 10px; position: relative; }
+.lookup label { font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.lookup-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.lookup input { flex: 1 1 260px; min-width: 0; font: inherit; padding: 11px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--fg); }
+.btn { border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); font-weight: 600; padding: 10px 16px; border-radius: 8px; }
+.btn:hover { filter: brightness(1.08); }
+.btn[disabled] { opacity: 0.55; cursor: not-allowed; }
+.btn.ghost { background: transparent; color: var(--accent); }
+.btn.small { padding: 6px 11px; font-size: 13px; }
+.sugg { list-style: none; margin: 0; padding: 0; display: grid; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.sugg[hidden] { display: none; }
+.sugg li { margin: 0; }
+.sugg button { width: 100%; text-align: left; display: flex; gap: 10px; align-items: center; justify-content: space-between; padding: 9px 12px; background: var(--surface); border: 0; border-bottom: 1px solid var(--line); }
+.sugg li:last-child button { border-bottom: 0; }
+.sugg button:hover, .sugg button:focus-visible { background: var(--accent-soft); }
+.sugg .nm { font-weight: 500; }
+.sugg .act { font-size: 12.5px; color: var(--accent); white-space: nowrap; }
+
+/* chips */
+.chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface-2); color: var(--muted); white-space: nowrap; }
+.chip.ok { background: var(--ok-bg); color: var(--ok); border-color: transparent; }
+.chip.warn { background: var(--warn-bg); color: var(--warn); border-color: transparent; }
+.chip.bad { background: var(--bad-bg); color: var(--bad); border-color: transparent; }
+.chip.acc { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+
+/* two-pane */
+.shell { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 20px; align-items: start; }
+.rail { display: grid; gap: 6px; position: sticky; top: 12px; }
+.rail h2 { font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-family: var(--f-body); font-weight: 600; margin-bottom: 4px; }
+.rail button { text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; display: grid; gap: 5px; }
+.rail button:hover { border-color: var(--accent); }
+.rail button[aria-current="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.rail .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.rail .nm { font-weight: 600; }
+.main { min-width: 0; display: grid; gap: 18px; }
+
+/* meter */
+.meter { display: inline-flex; gap: 3px; vertical-align: middle; }
+.meter i { width: 14px; height: 7px; border-radius: 2px; background: var(--line); display: block; }
+.meter.l-ok i.on { background: var(--ok); }
+.meter.l-warn i.on { background: var(--warn); }
+.meter.l-bad i.on { background: var(--bad); }
+.meter.lg i { width: 26px; height: 9px; }
+
+/* overview */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 14px; min-width: 0; overflow-wrap: anywhere; }
+.panel .tbl-wrap { overflow-wrap: normal; }
+.panel h2 { font-size: 20px; }
+.panel h3 { font-size: 15.5px; }
+.lede { max-width: 68ch; }
+.stat-row { display: flex; flex-wrap: wrap; gap: 10px 28px; }
+.stat b { font-family: var(--f-display); font-size: 30px; line-height: 1; display: block; letter-spacing: -0.02em; }
+.stat span { font-size: 12.5px; color: var(--muted); }
+.tbl-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; padding: 6px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+td .lnk { background: none; border: 0; padding: 0; color: var(--accent); font-weight: 600; text-align: left; text-decoration: underline; text-underline-offset: 2px; }
+.learn { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.learn div { border-top: 2px solid var(--accent); padding-top: 8px; display: grid; gap: 4px; font-size: 14px; }
+.learn b { font-family: var(--f-display); font-size: 15px; }
+
+/* guide */
+.ghead { display: grid; gap: 10px; }
+.ghead h2 { font-size: 30px; line-height: 1.1; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.metric { background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; display: grid; gap: 4px; align-content: start; min-width: 0; }
+.metric .k { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+.metric .v { font-weight: 500; overflow-wrap: anywhere; }
+.metric .v.big { font-family: var(--f-display); font-size: 19px; font-weight: 600; }
+.banner { border: 1px solid var(--warn); background: var(--warn-bg); color: var(--fg); border-radius: 8px; padding: 10px 12px; font-size: 14px; display: grid; gap: 3px; }
+.banner b { color: var(--warn); }
+.callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 10px 12px; border-radius: 0 8px 8px 0; display: grid; gap: 2px; }
+.callout b { font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); }
+.path { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(170px, 1fr); gap: 0; overflow-x: auto; padding-bottom: 4px; }
+.stage { padding: 0 14px 0 0; display: grid; gap: 5px; align-content: start; position: relative; min-width: 0; }
+.stage::before { content: ""; position: absolute; left: 0; right: 0; top: 7px; height: 2px; background: var(--line); }
+.stage::after { content: ""; position: relative; display: block; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); border: 3px solid var(--surface); box-shadow: 0 0 0 1.5px var(--accent); order: -1; margin-left: 0; z-index: 1; }
+.stage.provider::after { background: var(--surface); box-shadow: 0 0 0 1.5px var(--warn); }
+.stage.agent::after { background: var(--ok); box-shadow: 0 0 0 1.5px var(--ok); }
+.stage .nm { font-weight: 500; font-size: 14px; margin-top: 4px; overflow-wrap: anywhere; }
+.stage .du { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.split { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.split > div { display: grid; gap: 8px; align-content: start; min-width: 0; }
+ul.plain { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+ol.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; counter-reset: s; }
+ol.steps li { counter-increment: s; display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 12px; }
+ol.steps li::before { content: counter(s); font-family: var(--f-mono); font-size: 13px; width: 28px; height: 28px; border-radius: 6px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-weight: 500; }
+ol.steps .t { font-weight: 600; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+ol.steps .d { color: var(--fg); margin-top: 2px; overflow-wrap: anywhere; }
+ol.steps .u { font-size: 13px; margin-top: 3px; overflow-wrap: anywhere; }
+details.blk { border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }
+details.blk summary { padding: 10px 12px; cursor: pointer; font-weight: 600; }
+details.blk .in { padding: 0 12px 12px; display: grid; gap: 6px; font-size: 14px; }
+.ev-bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--line); }
+.ev-bar i { display: block; height: 100%; }
+.ev-bar .v { background: var(--ok); } .ev-bar .i { background: var(--warn); } .ev-bar .u { background: var(--bad); }
+.ev-key { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); }
+.ev-list { display: grid; gap: 8px; }
+.ev { border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; display: grid; gap: 4px; font-size: 14px; background: var(--surface-2); }
+.ev .src { font-size: 12.5px; overflow-wrap: anywhere; }
+.ev .nt { font-size: 13px; color: var(--muted); }
+.foot { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+
+/* generation progress */
+.gen { display: grid; gap: 8px; }
+.gen ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.gen li { display: flex; gap: 10px; align-items: baseline; font-size: 14px; }
+.gen .st { font-family: var(--f-mono); font-size: 12px; min-width: 62px; color: var(--muted); }
+.gen li.run .st { color: var(--accent); }
+.gen li.done .st { color: var(--ok); }
+.gen li.fail .st { color: var(--bad); }
+.dots::after { content: ""; animation: dots 1.2s steps(4, end) infinite; }
+@keyframes dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; } }
+@media (prefers-reduced-motion: reduce) { .dots::after { animation: none; content: "..."; } }
+
+@media (max-width: 820px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .rail { position: static; grid-auto-flow: column; grid-auto-columns: minmax(190px, 1fr); overflow-x: auto; padding-bottom: 4px; }
+  .rail h2 { display: none; }
+  .ghead h2 { font-size: 26px; }
+  .path { grid-auto-flow: row; grid-auto-columns: auto; }
+  .stage { padding: 0 0 14px 24px; }
+  .stage::before { left: 6px; right: auto; top: 0; bottom: 0; width: 2px; height: auto; }
+  .stage::after { position: absolute; left: 0; top: 2px; }
+  .stage .nm { margin-top: 0; }
+}
+</style>
+
+<div class="wrap">
+  <header class="mast">
+    <button class="brand" id="home" type="button" aria-label="Approval Path, back to overview">Approval <span>Path</span></button>
+    <p class="tag">How long it takes, what blocks you and who has to act when you register a provider OAuth app for an agent integration.</p>
+  </header>
+
+  <section class="lookup" aria-labelledby="lk-l">
+    <label id="lk-l" for="q">Look up an app</label>
+    <div class="lookup-row">
+      <input id="q" type="text" autocomplete="off" spellcheck="false" placeholder="Name or website, e.g. Spotify, Pipedrive, docusign.com" aria-controls="sugg">
+      <button class="btn" id="go" type="button">Find guide</button>
+    </div>
+    <ul class="sugg" id="sugg" hidden></ul>
+  </section>
+
+  <div class="shell">
+    <nav class="rail" id="rail" aria-label="Guide library"></nav>
+    <main class="main" id="main"></main>
+  </div>
+</div>
+
+<script>
+const GUIDES = /*__GUIDES__*/[];
+const DIRECTORY = /*__DIRECTORY__*/{managed:[],byo:[]};
+
+/* ---------- helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const norm = (s) => String(s || "").toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\.(com|io|co|dev|ai|app|net|org)(\/.*)?$/, "").replace(/[^a-z0-9]/g, "");
+const safeUrl = (u) => (typeof u === "string" && /^https:\/\/[^\s"'<>]+$/i.test(u) ? u : null);
+const link = (u, label) => { const s = safeUrl(u); return s ? `<a href="${esc(s)}" target="_blank" rel="noopener noreferrer">${esc(label || s)}</a>` : ""; };
+const arr = (x) => (Array.isArray(x) ? x : x == null || x === "" ? [] : [x]);
+const str = (x, d = "") => (x == null ? d : typeof x === "string" ? x : typeof x === "number" ? String(x) : d);
+
+const MANAGED = new Set(DIRECTORY.managed.map(norm));
+const BYO = new Set(DIRECTORY.byo.map(norm));
+const ALIASES = { x: "twitter", twitterx: "twitter", xtwitter: "twitter", facebookads: "metaads", facebookmarketing: "metaads", metamarketing: "metaads", instagramads: "metaads", gsheets: "googlesheets", gdrive: "googledrive", gcal: "googlecalendar", office365: "outlook", ms365: "outlook" };
+const BYNORM = new Map(GUIDES.map((g) => [norm(g.composioSlug), g]));
+
+function directoryStatus(name) {
+  let n = norm(name);
+  if (ALIASES[n]) n = ALIASES[n];
+  if (BYO.has(n)) return { status: "byo", slug: DIRECTORY.byo.find((s) => norm(s) === n) };
+  if (MANAGED.has(n)) return { status: "managed", slug: DIRECTORY.managed.find((s) => norm(s) === n) };
+  return { status: "none", slug: null };
+}
+function similar(name, limit = 8) {
+  const n = norm(ALIASES[norm(name)] || name);
+  if (!n) return [];
+  const all = [...DIRECTORY.byo.map((s) => ({ s, status: "byo" })), ...DIRECTORY.managed.map((s) => ({ s, status: "managed" }))];
+  const hit = all.filter((x) => norm(x.s).startsWith(n)).concat(all.filter((x) => !norm(x.s).startsWith(n) && norm(x.s).includes(n)));
+  return hit.slice(0, limit);
+}
+const pretty = (slug) => slug.toLowerCase().split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ").replace(/\bMcp\b/, "MCP");
+
+const DIFF_LABEL = { 1: "Easy", 2: "Light", 3: "Moderate", 4: "Hard", 5: "Gated" };
+const diffLevel = (d) => (d <= 2 ? "ok" : d === 3 ? "warn" : "bad");
+const GATING = { "self-serve": "Self-serve", "self-serve-with-limits": "Self-serve, with limits", "review-required": "Review required", "partner-or-tenant-gated": "Partner or tenant gated" };
+const OWNER = { you: "You", agent: "Agent", provider: "Provider / customer" };
+const meter = (d, lg) => `<span class="meter l-${diffLevel(d)}${lg ? " lg" : ""}" role="img" aria-label="Difficulty ${d} of 5, ${DIFF_LABEL[d] || ""}">${[1, 2, 3, 4, 5].map((i) => `<i class="${i <= d ? "on" : ""}"></i>`).join("")}</span>`;
+const statusChip = (s) => (s === "managed" ? '<span class="chip ok">Composio managed app</span>' : s === "byo" ? '<span class="chip warn">Bring your own app</span>' : '<span class="chip">Not in Composio OAuth list</span>');
+
+/* ---------- views ---------- */
+let current = null;      // slug of library guide in view
+let generated = null;    // live-generated guide in view
+let busy = null;         // AbortController while generating
+let sampleP = null;      // promise for the sample capability
+
+function renderRail() {
+  const sorted = [...GUIDES].sort((a, b) => a.difficulty - b.difficulty);
+  $("#rail").innerHTML = `<h2>Library · ${GUIDES.length} apps</h2>` + sorted.map((g) =>
+    `<button type="button" data-slug="${esc(g.slug)}" aria-current="${current === g.slug && !generated}">
+       <span class="row"><span class="nm">${esc(g.name)}</span>${meter(g.difficulty)}</span>
+       <span class="muted" style="font-size:12.5px">${esc(DIFF_LABEL[g.difficulty])} · ${esc(GATING[g.gatingModel] || g.gatingModel)}</span>
+     </button>`).join("");
+}
+
+function renderOverview() {
+  current = null; generated = null; renderRail();
+  const rows = [...GUIDES].sort((a, b) => a.difficulty - b.difficulty).map((g) =>
+    `<tr><td><button class="lnk" type="button" data-slug="${esc(g.slug)}">${esc(g.name)}</button></td>
+       <td>${meter(g.difficulty)} <span class="muted">${esc(DIFF_LABEL[g.difficulty])}</span></td>
+       <td>${esc(GATING[g.gatingModel] || g.gatingModel)}</td>
+       <td>${esc(short(g.time.setup))}</td><td>${esc(short(g.time.approval))}</td><td>${esc(short(g.time.total))}</td></tr>`).join("");
+  $("#main").innerHTML = `
+    <section class="panel">
+      <h2>Registering your own OAuth app is where integrations stall</h2>
+      <p class="lede">Composio supplies the OAuth app for <b>${DIRECTORY.managedCount}</b> toolkits. For another <b>${DIRECTORY.byoCount}</b> you register the app with the provider, wait for any review, and give Composio the client ID and secret in a custom auth config. Setup takes minutes. Approval, paid plans and customer admins decide whether you launch.</p>
+      <div class="stat-row">
+        <div class="stat"><b>${DIRECTORY.managedCount}</b><span>Composio managed OAuth</span></div>
+        <div class="stat"><b>${DIRECTORY.byoCount}</b><span>Bring your own OAuth app</span></div>
+        <div class="stat"><b>${GUIDES.length}</b><span>Guides researched and checked</span></div>
+      </div>
+      <p class="muted" style="font-size:13px">Counts from the <a href="https://docs.composio.dev/toolkits/managed-auth" target="_blank" rel="noopener noreferrer">managed OAuth apps directory</a>, read on ${esc(DIRECTORY.capturedOn)}.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Difficulty ladder</h2>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>App</th><th>Difficulty</th><th>Gating</th><th>Setup</th><th>Approval</th><th>Total</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>
+    </section>
+
+    <section class="panel">
+      <h2>What the research showed</h2>
+      <div class="learn">
+        <div><b>The form is quick, the gate is not</b><span>Every app here gives you credentials in under an hour. The wait comes after: Spotify's Extended Quota review takes up to six weeks, Meta needs Business Verification plus per-permission App Review, Shopify's public listing needs App Store review.</span></div>
+        <div><b>Some gates are money or people</b><span>Xero's free plan caps an app at 5 connections and the next tier is a paid plan with a card. Workday has no developer-owned app at all: each customer's admin registers a client in their own tenant.</span></div>
+        <div><b>Docs often hide the answer</b><span>Several provider consoles are login-gated or rendered by script, and review timelines are rarely published. Each guide marks which claims were read on an official page and which rest on community reports.</span></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Not in the library?</h2>
+      <p class="lede">Type any app name or website in the box above and choose <b>Generate guide</b>. Claude drafts a guide in the same format, checks it against the Composio directory, then reviews its own draft for claims likely to be wrong. Generated guides are drafts from the model's own knowledge and are marked unverified until someone checks them against the cited pages.</p>
+      <p class="muted" style="font-size:13px">Library guides were researched against official provider docs by separate agents, and a sample of their claims was re-checked by hand. See each guide's evidence list.</p>
+    </section>`;
+  try { history.replaceState(null, "", location.pathname + location.search); } catch (_) {}
+}
+
+function short(s) { s = str(s); const cut = s.split(/ \(|; | \| /)[0]; return cut.length > 70 ? cut.slice(0, 68) + "…" : cut; }
+
+function renderGuide(g, isGen) {
+  const ev = arr(g.evidence);
+  const count = (k) => ev.filter((e) => e.status === k).length;
+  const nv = count("verified"), ni = count("inferred"), nu = count("unverified"), tot = Math.max(ev.length, 1);
+  const d = g.difficulty;
+  const stages = arr(g.stages).map((s) => `<div class="stage ${esc(s.owner)}"><span class="chip ${s.owner === "provider" ? "warn" : s.owner === "agent" ? "ok" : "acc"}" style="justify-self:start">${esc(OWNER[s.owner] || s.owner)}</span><div class="nm">${esc(s.name)}</div><div class="du">${esc(s.duration)}</div></div>`).join("");
+  const steps = arr(g.steps).map((s) => `<li><div><div class="t">${esc(s.title)} <span class="chip ${s.owner === "agent" ? "ok" : "acc"}">${esc(OWNER[s.owner] || "You")}</span></div><div class="d">${esc(s.detail)}</div>${safeUrl(s.url) ? `<div class="u">${link(s.url)}</div>` : ""}</div></li>`).join("");
+  const blockers = arr(g.blockers).map((b) => `<details class="blk"><summary>${esc(b.blocker)}</summary><div class="in"><p><b>What you will see.</b> ${esc(b.symptom)}</p><p><b>What to do.</b> ${esc(b.whatToDo)}</p>${b.escalation ? `<p><b>Where to escalate.</b> ${safeUrl(b.escalation) ? link(b.escalation) : esc(b.escalation)}</p>` : ""}</div></details>`).join("");
+  const evid = ev.map((e) => `<div class="ev"><div><span class="chip ${e.status === "verified" ? "ok" : e.status === "inferred" ? "warn" : "bad"}">${esc(e.status)}</span> ${esc(e.claim)}</div>${safeUrl(e.source) ? `<div class="src">${link(e.source)}${isGen ? ' <span class="muted">(model-suggested, not opened)</span>' : ""}</div>` : '<div class="src muted">No source opened</div>'}${e.note ? `<div class="nt">${esc(e.note)}</div>` : ""}</div>`).join("");
+  const li = (a) => arr(a).map((x) => `<li>${esc(x)}</li>`).join("");
+  const ds = g.directory || directoryStatus(g.composioSlug || g.name);
+
+  $("#main").innerHTML = `
+    <article class="panel" id="guide">
+      <div class="ghead">
+        <div class="chips">${statusChip(ds.status)}<span class="chip">${esc(GATING[g.gatingModel] || g.gatingModel)}</span>${isGen ? '<span class="chip bad">AI draft, unverified</span>' : `<span class="chip">Checked ${esc(g.lastChecked)}</span>`}</div>
+        <h2>${esc(g.name)}</h2>
+        <p class="lede">${esc(g.summary)}</p>
+      </div>
+      ${isGen ? `<div class="banner"><b>Draft from model knowledge.</b><span>The model could not open any web page while writing this. Treat every figure, date and limit as a lead to confirm on the official pages, not as fact. Review notes from its own second pass are listed under Uncertainties.</span></div>` : ""}
+      <div class="metrics">
+        <div class="metric"><span class="k">Difficulty</span><span class="v big">${meter(d, true)} ${esc(DIFF_LABEL[d])}</span><span class="muted" style="font-size:13px">${esc(g.difficultyWhy)}</span></div>
+        <div class="metric"><span class="k">Setup time</span><span class="v">${esc(g.time.setup)}</span></div>
+        <div class="metric"><span class="k">Approval wait</span><span class="v">${esc(g.time.approval)}</span></div>
+        <div class="metric"><span class="k">Total to production</span><span class="v">${esc(g.time.total)}</span></div>
+      </div>
+      ${g.devModeLimits ? `<div class="callout"><b>What works before approval</b><span>${esc(g.devModeLimits)}</span></div>` : ""}
+
+      <h3>The path</h3>
+      <div class="path">${stages}</div>
+
+      <div class="split">
+        <div><h3>An agent can do</h3><ul class="plain">${li(g.agentCanDo)}</ul></div>
+        <div><h3>You have to do</h3><ul class="plain">${li(g.youMustDo)}</ul></div>
+      </div>
+    </article>
+
+    <section class="panel"><h2>Steps</h2><ol class="steps">${steps}</ol>
+      <div class="callout"><b>Composio custom auth config</b><span>Use <span class="mono">${esc(g.composio.redirectUri)}</span> as the redirect URI. ${esc(g.composio.note)}</span></div>
+    </section>
+
+    <section class="panel"><div class="split">
+      <div><h2>Requirements</h2><ul class="plain">${li(g.requirements)}</ul></div>
+      <div><h2>Gotchas</h2><ul class="plain">${li(g.gotchas)}</ul></div>
+    </div></section>
+
+    <section class="panel"><h2>If you hit a blocker</h2>${blockers || '<p class="muted">No blockers listed.</p>'}</section>
+
+    <section class="panel">
+      <h2>Evidence</h2>
+      <div class="ev-bar" role="img" aria-label="${nv} verified, ${ni} inferred, ${nu} unverified claims"><i class="v" style="width:${(nv / tot) * 100}%"></i><i class="i" style="width:${(ni / tot) * 100}%"></i><i class="u" style="width:${(nu / tot) * 100}%"></i></div>
+      <div class="ev-key"><span><b>${nv}</b> verified: read on the cited page</span><span><b>${ni}</b> inferred: community or third party</span><span><b>${nu}</b> unverified</span></div>
+      <div class="ev-list">${evid}</div>
+      ${arr(g.uncertainties).length ? `<h3>Uncertainties</h3><ul class="plain">${li(g.uncertainties)}</ul>` : ""}
+    </section>
+
+    <div class="foot">
+      <span class="muted" style="font-size:13px">${esc(g.name)} · ${isGen ? "generated just now" : "checked " + esc(g.lastChecked)}</span>
+      <span><span id="cp-note" class="muted" style="font-size:13px" role="status"></span> <button class="btn ghost small" type="button" id="cp">Copy as Markdown</button></span>
+    </div>`;
+  $("#cp").onclick = () => copyMd(g, isGen);
+  window.scrollTo({ top: 0 });
+}
+
+function toMarkdown(g, isGen) {
+  const L = (a) => arr(a).map((x) => `- ${x}`).join("\n");
+  return `# ${g.name}: OAuth app guide\n${isGen ? "\n> AI draft from model knowledge. Unverified: confirm every claim on the official pages.\n" : `\n_Checked ${g.lastChecked}_\n`}\n${g.summary}\n\n**Difficulty:** ${g.difficulty}/5 (${DIFF_LABEL[g.difficulty]}). ${g.difficultyWhy}\n\n| Setup | Approval | Total |\n|---|---|---|\n| ${g.time.setup} | ${g.time.approval} | ${g.time.total} |\n\n${g.devModeLimits ? `**Before approval:** ${g.devModeLimits}\n\n` : ""}## Path\n${arr(g.stages).map((s, i) => `${i + 1}. ${s.name} (${OWNER[s.owner] || s.owner}, ${s.duration})`).join("\n")}\n\n## An agent can do\n${L(g.agentCanDo)}\n\n## You have to do\n${L(g.youMustDo)}\n\n## Steps\n${arr(g.steps).map((s) => `${s.n}. **${s.title}** (${OWNER[s.owner] || "You"}). ${s.detail}${s.url ? ` ${s.url}` : ""}`).join("\n")}\n\nComposio redirect URI: ${g.composio.redirectUri}. ${g.composio.note}\n\n## Requirements\n${L(g.requirements)}\n\n## Gotchas\n${L(g.gotchas)}\n\n## If you hit a blocker\n${arr(g.blockers).map((b) => `- **${b.blocker}.** ${b.symptom} ${b.whatToDo}${b.escalation ? ` Escalate: ${b.escalation}` : ""}`).join("\n")}\n\n## Evidence\n${arr(g.evidence).map((e) => `- [${e.status}] ${e.claim}${e.source ? ` (${e.source})` : ""}`).join("\n")}\n\n## Uncertainties\n${L(g.uncertainties)}\n`;
+}
+async function copyMd(g, isGen) {
+  const text = toMarkdown(g, isGen), note = $("#cp-note");
+  try { await navigator.clipboard.writeText(text); note.textContent = "Copied"; }
+  catch (e) {
+    const ta = document.createElement("textarea"); ta.value = text; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;opacity:0"; document.body.append(ta); ta.select();
+    let ok = false; try { ok = document.execCommand("copy"); } catch (_) {} ta.remove(); note.textContent = ok ? "Copied" : "Copy blocked: select the page text instead";
+  }
+  setTimeout(() => { if (note) note.textContent = ""; }, 3000);
+}
+
+function openGuide(slug) {
+  const g = GUIDES.find((x) => x.slug === slug);
+  if (!g) return renderOverview();
+  generated = null; current = slug; renderRail(); renderGuide(g, false);
+  try { history.replaceState(null, "", "#" + slug); } catch (_) {}
+}
+
+/* ---------- lookup ---------- */
+function suggestions() {
+  const q = $("#q").value.trim(), box = $("#sugg");
+  if (!q) { box.hidden = true; box.innerHTML = ""; return; }
+  const n = norm(q), items = [];
+  const lib = GUIDES.filter((g) => norm(g.name).includes(n) || norm(g.composioSlug).includes(n) || norm(ALIASES[n] || "") === norm(g.composioSlug));
+  lib.forEach((g) => items.push({ kind: "open", slug: g.slug, label: g.name, tag: statusChip("byo") + ' <span class="chip acc">Guide ready</span>', act: "Open guide" }));
+  similar(q, 6).filter((x) => !BYNORM.has(norm(x.s))).forEach((x) => items.push({ kind: "gen", name: pretty(x.s), label: pretty(x.s), tag: statusChip(x.status), act: "Generate guide" }));
+  items.push({ kind: "gen", name: q, label: `“${q}”`, tag: statusChip(directoryStatus(q).status), act: "Generate guide" });
+  box.innerHTML = items.map((it, i) => `<li><button type="button" data-i="${i}"><span><span class="nm">${esc(it.label)}</span> ${it.tag}</span><span class="act">${it.act}</span></button></li>`).join("");
+  box.hidden = false;
+  box._items = items;
+}
+function pick(it) {
+  $("#sugg").hidden = true;
+  if (it.kind === "open") { $("#q").value = ""; openGuide(it.slug); } else { generate(it.name); }
+}
+function submitQuery() {
+  const q = $("#q").value.trim(); if (!q) return;
+  const n = norm(ALIASES[norm(q)] || q), g = GUIDES.find((x) => norm(x.name) === n || norm(x.composioSlug) === n);
+  if (g) { $("#q").value = ""; $("#sugg").hidden = true; openGuide(g.slug); } else { $("#sugg").hidden = true; generate(q); }
+}
+
+/* ---------- live generation ---------- */
+const SCHEMA_TEXT = `{
+ "slug": "lowercase-id", "name": "App name", "website": "https://...",
+ "summary": "one sentence on what getting an OAuth app ready looks like",
+ "difficulty": 1-5 (1 = minutes, self-serve; 5 = gated, weeks, human review),
+ "difficultyWhy": "1-2 sentences",
+ "time": {"setup": "...", "approval": "...", "total": "..."},
+ "gatingModel": "self-serve | self-serve-with-limits | review-required | partner-or-tenant-gated",
+ "devModeLimits": "what works before approval, or null",
+ "stages": [{"name": "...", "duration": "...", "owner": "you|agent|provider"}],
+ "steps": [{"n": 1, "title": "...", "detail": "concrete instructions with field names", "owner": "you|agent", "url": "official https URL you are confident exists, or null"}],
+ "requirements": ["..."], "gotchas": ["..."],
+ "blockers": [{"blocker": "...", "symptom": "...", "whatToDo": "...", "escalation": "..."}],
+ "agentCanDo": ["..."], "youMustDo": ["login, 2FA, CAPTCHA, identity or business verification, payment, legal acceptance, ..."],
+ "composio": {"redirectUri": "https://backend.composio.dev/api/v3/toolkits/auth/callback", "note": "provider-specific note"},
+ "evidence": [{"claim": "specific factual claim made above", "status": "inferred|unverified", "source": "official URL or null", "note": "..."}],
+ "uncertainties": ["things you could not confirm"]
+}`;
+
+function sampleCopy(code) {
+  return ({
+    no_runtime: "Live generation runs only when this page is open inside Claude (claude.ai or the Claude app). The library guides work anywhere.",
+    not_granted: "Claude access was declined for this page, so live generation is switched off. Reload and allow it to try again.",
+    sampling_disabled: "Claude is not available for this account.",
+    rate_limited: "Too many requests or a usage limit was reached. Wait a few minutes and try again.",
+    session_expired: "Your session expired. Sign in again and retry.",
+    invalid_json: "The model's reply could not be read as a guide. Try again, or try a more specific name.",
+    refused: "The model declined this request. Try a different app name.",
+    prompt_too_large: "The request grew too large. Try again.",
+    tools_unavailable: "This viewer cannot run the page tools the agent uses. Open the page in the Claude app or on claude.ai.",
+  })[code] || "The generation service failed. You can try again.";
+}
+
+function showProgress(name, steps, note) {
+  const row = (s) => `<li class="${s.state}"><span class="st">${{ run: "running", done: "done", fail: "failed", wait: "waiting" }[s.state]}</span><span>${esc(s.label)}${s.state === "run" ? '<span class="dots"></span>' : ""}${s.detail ? ` <span class="muted">${esc(s.detail)}</span>` : ""}</span></li>`;
+  $("#main").innerHTML = `<section class="panel gen" aria-live="polite"><h2>Generating a guide for ${esc(name)}</h2><ol>${steps.map(row).join("")}</ol>${note ? `<p class="muted" style="font-size:13px">${esc(note)}</p>` : ""}<div><button class="btn ghost small" type="button" id="stop">Stop</button></div></section>`;
+  $("#stop").onclick = () => busy && busy.abort();
+}
+
+async function generate(rawName) {
+  if (busy) return;
+  const name = rawName.trim();
+  const ds = directoryStatus(name);
+  const steps = [
+    { label: "Check the Composio OAuth directory", state: "done", detail: ds.status === "managed" ? "Composio provides a managed app" : ds.status === "byo" ? "You register your own app" : "Not listed as an OAuth toolkit" },
+    { label: "Agent drafts the guide", state: "run", detail: "" },
+    { label: "Second pass reviews the draft for likely errors", state: "wait", detail: "" },
+  ];
+  current = null; generated = null; renderRail();
+  busy = new AbortController();
+  showProgress(name, steps, "The first call asks you to allow Claude on this page. A draft takes about one to three minutes.");
+  window.scrollTo({ top: 0 });
+  try {
+    sampleP = sampleP || (window.claude && window.claude.use ? window.claude.use("sample") : Promise.resolve(null));
+    const sample = await sampleP;
+    if (!sample) throw { code: "no_runtime" };
+    const tools = [
+      { name: "checkComposioDirectory", description: "Look up an app name in Composio's directory of OAuth toolkits. Returns whether Composio supplies a managed OAuth app (managed) or the developer must register their own (bring_your_own), plus close matches.",
+        inputSchema: { type: "object", properties: { name: { type: "string" } }, required: ["name"] },
+        execute: (inp) => { const q = str(inp.name); const r = directoryStatus(q); steps[1].detail = `checked directory for ${q}`; showProgress(name, steps); return { query: q, match: r.slug ? { slug: r.slug, status: r.status === "byo" ? "bring_your_own" : "managed" } : null, similar: similar(q, 5).map((x) => ({ slug: x.s, status: x.status === "byo" ? "bring_your_own" : "managed" })) }; } },
+      { name: "getReferenceGuide", description: "Return one finished, source-checked guide from the library to use as a format and quality reference. Valid slugs: " + GUIDES.map((g) => g.slug).join(", ") + ". Call it once.",
+        inputSchema: { type: "object", properties: { slug: { type: "string" } }, required: ["slug"] },
+        execute: (inp) => { const g = GUIDES.find((x) => x.slug === str(inp.slug)); if (!g) throw new Error("unknown slug"); steps[1].detail = `reading the ${g.name} reference`; showProgress(name, steps); const { evidence, ...rest } = g; return { ...rest, evidence: evidence.slice(0, 3) }; } },
+    ];
+    const draftPrompt = `You are an integration researcher. A developer building an AI agent wants their users to connect "${name}" through Composio, an agent integration platform. Work out what it takes to get a provider OAuth app ready and approved for ${name}, and write a guide.
+
+What you know about the situation: the Composio directory says ${ds.status === "managed" ? `Composio already provides a managed OAuth app for ${name}, so registering your own is optional (needed for your own branding, custom scopes or separate rate limits)` : ds.status === "byo" ? `the developer must register their own OAuth app for ${name}` : `${name} is not listed as an OAuth toolkit; it may use API keys instead, or may not be integrated yet. Say which, if you know`}. Call checkComposioDirectory once to confirm, and getReferenceGuide once (pick the library app closest to ${name} in how access is gated) so your output matches the library's format and level of detail.
+
+Hard rules:
+- You cannot browse the web in this environment. Everything you write comes from memory and may be out of date. Never claim you checked a page.
+- Every item in "evidence" must have status "inferred" or "unverified". Use "unverified" for any price, quota, user cap, date, review time or threshold.
+- Give a URL only if you are confident it is a real official page; otherwise use null. Never invent URLs.
+- Be concrete about who must act (you, the agent, the provider or a customer admin), and about anything an agent cannot do: login, two-factor, CAPTCHA, identity or business verification, payment, legal acceptance.
+- Use "https://backend.composio.dev/api/v3/toolkits/auth/callback" as composio.redirectUri.
+- 6 to 10 steps, 3 to 6 stages, 3 to 5 blockers, 8 to 14 evidence items.
+
+Reply with only one JSON object in exactly this shape:
+${SCHEMA_TEXT}`;
+    const draft = await sample.json(draftPrompt, { tools, signal: busy.signal });
+    steps[1].state = "done"; steps[1].detail = ""; steps[2].state = "run";
+    showProgress(name, steps);
+
+    const reviewPrompt = `You are a sceptical reviewer. Below is a draft guide written from memory, without web access, about getting an OAuth app approved for "${name}". Find the claims most likely to be wrong or out of date: prices, quotas, user caps, review durations, thresholds, dates, console names, scope names, policy changes. For each, soften the wording, move it to the "uncertainties" list, or remove it. Add any important blocker or requirement the draft missed. Keep the same JSON shape and keep it complete. Every evidence item must stay "inferred" or "unverified", and any URL you are not sure exists must become null. Begin the "uncertainties" list with 2 to 4 short notes on what the review changed or doubts.
+
+Reply with only the corrected JSON object.
+
+Draft:
+${JSON.stringify(draft)}`;
+    let final = draft, reviewed = true;
+    try { final = await sample.json(reviewPrompt, { signal: busy.signal }); }
+    catch (e) { if (e && e.code === "cancelled") throw e; final = draft; reviewed = false; }
+    steps[2].state = reviewed ? "done" : "fail"; steps[2].detail = reviewed ? "" : "skipped, showing the first draft";
+
+    const g = normalizeGuide(final, name, ds, reviewed);
+    generated = g; renderRail(); renderGuide(g, true);
+  } catch (e) {
+    if (e && e.code === "cancelled") { renderOverview(); }
+    else {
+      try { console.error("generate failed", e && e.code ? e.code : e, e && e.message ? e.message : ""); } catch (_) {}
+      const code = e && e.code ? e.code : "upstream_error";
+      steps.forEach((s) => { if (s.state === "run") { s.state = "fail"; } });
+      showProgress(name, steps);
+      $("#main").querySelector(".gen").insertAdjacentHTML("beforeend", `<div class="banner"><b>Could not finish.</b><span>${esc(sampleCopy(code))}</span></div>`);
+      const stop = $("#stop"); stop.textContent = "Back to overview"; stop.onclick = renderOverview;
+    }
+  } finally { busy = null; }
+}
+
+function normalizeGuide(raw, name, ds, reviewed) {
+  const g = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+  const d = Math.min(5, Math.max(1, Math.round(Number(g.difficulty)) || 3));
+  const time = g.time && typeof g.time === "object" ? g.time : {};
+  const owner = (o, allowed) => (allowed.includes(o) ? o : "you");
+  const cleanText = (a) => arr(a).map((x) => str(x)).filter(Boolean);
+  const out = {
+    slug: "generated", name: str(g.name, name) || name, composioSlug: ds.slug || "", website: safeUrl(g.website) || "",
+    summary: str(g.summary, "Draft guide generated from model knowledge."), difficulty: d, difficultyWhy: str(g.difficultyWhy, ""),
+    time: { setup: str(time.setup, "Unknown"), approval: str(time.approval, "Unknown"), total: str(time.total, "Unknown") },
+    gatingModel: Object.keys(GATING).includes(g.gatingModel) ? g.gatingModel : "review-required",
+    devModeLimits: g.devModeLimits ? str(g.devModeLimits) : null,
+    stages: arr(g.stages).map((s) => ({ name: str(s && s.name), duration: str(s && s.duration), owner: owner(s && s.owner, ["you", "agent", "provider"]) })).filter((s) => s.name),
+    steps: arr(g.steps).map((s, i) => ({ n: i + 1, title: str(s && s.title), detail: str(s && s.detail), owner: owner(s && s.owner, ["you", "agent"]), url: safeUrl(s && s.url) })).filter((s) => s.title),
+    requirements: cleanText(g.requirements), gotchas: cleanText(g.gotchas),
+    blockers: arr(g.blockers).map((b) => ({ blocker: str(b && b.blocker), symptom: str(b && b.symptom), whatToDo: str(b && b.whatToDo), escalation: str(b && b.escalation) || null })).filter((b) => b.blocker),
+    agentCanDo: cleanText(g.agentCanDo), youMustDo: cleanText(g.youMustDo),
+    composio: { redirectUri: "https://backend.composio.dev/api/v3/toolkits/auth/callback", note: str(g.composio && g.composio.note) },
+    // No page was opened while generating, so nothing the model says can be "verified".
+    evidence: arr(g.evidence).map((e) => ({ claim: str(e && e.claim), status: e && e.status === "inferred" ? "inferred" : "unverified", source: safeUrl(e && e.source), note: str(e && e.note) || null })).filter((e) => e.claim),
+    uncertainties: cleanText(g.uncertainties), directory: ds,
+  };
+  if (ds.status !== "none") out.evidence.unshift({ claim: ds.status === "managed" ? `Composio provides a managed OAuth app for ${out.name}.` : `Composio has no managed OAuth app for ${out.name}: you register your own and supply it through a custom auth config.`, status: "verified", source: "https://docs.composio.dev/toolkits/managed-auth", note: "From the directory captured " + DIRECTORY.capturedOn + ", matched by this page, not by the model." });
+  if (!reviewed) out.uncertainties.unshift("The second review pass did not complete, so this is the first draft.");
+  return out;
+}
+
+/* ---------- wiring ---------- */
+$("#rail").addEventListener("click", (e) => { const b = e.target.closest("button[data-slug]"); if (b) openGuide(b.dataset.slug); });
+$("#main").addEventListener("click", (e) => { const b = e.target.closest("button[data-slug]"); if (b) openGuide(b.dataset.slug); });
+$("#home").addEventListener("click", () => { if (busy) busy.abort(); else renderOverview(); });
+$("#q").addEventListener("input", suggestions);
+$("#q").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); submitQuery(); } if (e.key === "Escape") $("#sugg").hidden = true; });
+$("#go").addEventListener("click", submitQuery);
+$("#sugg").addEventListener("click", (e) => { const b = e.target.closest("button[data-i]"); if (b) pick($("#sugg")._items[Number(b.dataset.i)]); });
+window.addEventListener("hashchange", () => { const t = location.hash.slice(1); if (!busy && t && GUIDES.some((g) => g.slug === t) && t !== current) openGuide(t); });
+
+(function boot() {
+  const t = location.hash.slice(1);
+  if (t && GUIDES.some((g) => g.slug === t)) openGuide(t); else renderOverview();
+  try { sampleP = window.claude && window.claude.use ? window.claude.use("sample") : null; } catch (_) { sampleP = null; }
+})();
+</script>
