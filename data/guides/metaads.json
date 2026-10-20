@@ -1,0 +1,314 @@
+{
+  "slug": "metaads",
+  "name": "Meta Ads (Facebook Marketing API)",
+  "composioSlug": "METAADS",
+  "website": "https://developers.facebook.com/docs/marketing-api/",
+  "summary": "Register a Meta developer account and app (with a business portfolio), add the Marketing API use case, then pass Business Verification and App Review for Advanced Access to ads_read/ads_management (and business_management) before any user outside your own team can connect ad accounts.",
+  "difficulty": 4,
+  "difficultyWhy": "App creation is self-serve, but connecting other businesses' ad accounts requires Business Verification (admin of a real business, legal documents) plus per-permission App Review with a screencast and working test credentials, and community reports in 2026 describe review taking weeks with rejections for vague notes or broken test access.",
+  "time": {
+    "setup": "~30-60 min (developer account, business portfolio, app, Marketing API use case, redirect URI)",
+    "approval": "Business Verification: no official timeline (community reports range from under 1 day to about a week or more); App Review: ~1-3 weeks recently (reported, not official)",
+    "total": "~2-5 weeks typical if submitted cleanly; longer after rejections"
+  },
+  "gatingModel": "review-required",
+  "devModeLimits": "New apps start in Development mode. Only people with a role on the app (Admin/Developer/Tester) can grant permissions and use features; the app is hidden from the public. Marketing API default tier is 'Limited' (development only): heavily limited rate limits per ad account (Development tier score max 60; ads_management BUC 300 + 40 x active ads per hour), limited Business Manager API access, 1 system user + 1 admin system user. Apps managing only their own ad accounts can use ads_read/ads_management at Standard Access without review. Calls on any level hit production data.",
+  "stages": [
+    { "name": "Meta developer account + business portfolio", "duration": "15-30 min", "owner": "you" },
+    { "name": "Create app and add Marketing API use case; configure Facebook Login redirect URI", "duration": "15-30 min", "owner": "you" },
+    { "name": "Develop and test as role users in Development mode (generate real API calls)", "duration": "days (depends on build)", "owner": "agent" },
+    { "name": "Business Verification (documents uploaded in Business Manager, admin only)", "duration": "~1 day to 1+ weeks (reported)", "owner": "provider" },
+    { "name": "Prepare App Review submission: screencast, step-by-step notes, test credentials", "duration": "0.5-1 day", "owner": "you" },
+    { "name": "App Review for Advanced Access (per permission) and Marketing API tier upgrade", "duration": "~1-3 weeks (reported); Meta reportedly warns ~20 days", "owner": "provider" },
+    { "name": "Switch app to Live mode and create Composio custom auth config", "duration": "10-15 min", "owner": "you" }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "title": "Register as a Meta developer",
+      "detail": "Log in to developers.facebook.com with a personal Facebook account and complete developer registration. You must be registered and logged in before you can create an app. Use an account that will remain with the company; you can hold a role on at most 15 apps not connected to a Meta Verified Business.",
+      "owner": "you",
+      "url": "https://developers.facebook.com/docs/development/create-an-app"
+    },
+    {
+      "n": 2,
+      "title": "Create or choose a business portfolio (Business Manager)",
+      "detail": "Create a business portfolio at business.facebook.com under your real legal business name (it must later match your verification documents exactly, per a community report). A portfolio connected to the app is required if the app accesses data you do not own or manage. Make sure an Admin of the portfolio is available for verification.",
+      "owner": "you",
+      "url": "https://developers.facebook.com/docs/development/release/business-verification"
+    },
+    {
+      "n": 3,
+      "title": "Create the app and select the Marketing API use case",
+      "detail": "Go to https://developers.facebook.com/apps/creation/ . Enter app name and contact email, select use case(s) (look for the ads/Marketing API use case; if not listed choose Other and follow the Other App Types guide), connect your business portfolio (verified, unverified or none for now), review requirements, then 'Go to dashboard'. Selecting a use case auto-adds its required permissions/products; use cases cannot be removed once added. Exact label of the Marketing API use case was not confirmed on the docs page.",
+      "owner": "you",
+      "url": "https://developers.facebook.com/apps/creation/"
+    },
+    {
+      "n": 4,
+      "title": "Configure Facebook Login (or Facebook Login for Business) and the redirect URI",
+      "detail": "In App Dashboard > Facebook Login > Settings add https://backend.composio.dev/api/v3/toolkits/auth/callback to Valid OAuth Redirect URIs. Strict Mode requires an exact full-URI match; HTTPS is enforced; Client OAuth Login and Web OAuth Login should be on for a server-side web flow. Copy App ID (client ID) and App Secret (Settings > Basic). If your app uses Facebook Login for Business, create a Configuration (access token type, assets, permissions) and note that config_id replaces scope; whether Composio's flow can send config_id is not known, so prefer classic scope-based flow for the Composio auth config unless Composio docs say otherwise.",
+      "owner": "you",
+      "url": "https://developers.facebook.com/docs/facebook-login/security/"
+    },
+    {
+      "n": 5,
+      "title": "Test in Development mode with role users",
+      "detail": "Add teammates as Admin/Developer/Tester. Request scopes ads_read, ads_management (and business_management if you need Business Manager APIs) and make real Marketing API calls (reads and writes) against an ad account you or your testers can access. You need successful API calls for the access-tier upgrade and, per community comment, a test call before the 'Request advanced access' button activates. Keep at least 500 successful Marketing API calls in 15 days with <15% errors in the last 500 to hold Full access.",
+      "owner": "agent",
+      "url": "https://developers.facebook.com/docs/marketing-api/overview/authorization"
+    },
+    {
+      "n": 6,
+      "title": "Complete Business Verification",
+      "detail": "Connect the app to your verified-to-be business in App Dashboard > Settings > Basic > Verification, then complete verification in Business Manager (Security Center). Only an Admin of the business can do it. Prepare legal registration documents, tax certificate or utility bill, matching legal name/address/phone/website. Required for Advanced Access (as of Feb 1, 2023) when other businesses will grant your app permissions; without it, users from other businesses cannot grant permissions.",
+      "owner": "you",
+      "url": "https://developers.facebook.com/docs/development/release/business-verification"
+    },
+    {
+      "n": 7,
+      "title": "Request Advanced Access per permission (App Review)",
+      "detail": "App Dashboard > App Review > Permissions and Features: click 'Request advanced access' for ads_read and ads_management (and business_management, plus dependencies pages_read_engagement and pages_show_list for ads_management and business_management). For each, provide a business-terms justification (why you need to manage/read ads or business assets on behalf of other businesses), a screencast showing the login flow and ad data (impressions, spend, clicks, reach, conversions) inside your app, step-by-step reviewer instructions, and working test credentials. Only request permissions you demonstrably use today. Complete any other processes listed (e.g. data handling questions, privacy policy URL).",
+      "owner": "you",
+      "url": "https://developers.facebook.com/documentation/development/permissions"
+    },
+    {
+      "n": 8,
+      "title": "Upgrade the Marketing API Access Tier to Full access",
+      "detail": "In App Dashboard click +Upgrade for the Marketing API access tier (previously 'Ads Management Standard Access'; Full access threshold is 500 Marketing API calls in 15 days). Check status in App Review > Permissions and Features. Full tier raises rate limits (score max 9000; ads_management BUC 100000 + 40 x active ads per hour), allows 10 system users + 1 admin system user and full Business Manager API access.",
+      "owner": "you",
+      "url": "https://developers.facebook.com/docs/marketing-api/overview/authorization"
+    },
+    {
+      "n": 9,
+      "title": "Switch app to Live mode",
+      "detail": "Only after development and App Review are complete, an Admin flips the app-mode toggle in the App Dashboard toolbar to Live. In Live mode permissions can be requested from anyone but only App Review-approved ones work. Complete any basic settings the dashboard asks for (privacy policy URL, app icon, category); these exact requirements were not confirmed on the fetched page.",
+      "owner": "you",
+      "url": "https://developers.facebook.com/docs/development/build-and-test/app-modes"
+    },
+    {
+      "n": 10,
+      "title": "Create the Composio custom auth config for METAADS",
+      "detail": "In Composio, create a custom auth config for METAADS with the App ID as client ID, App Secret as client secret, and scopes such as ads_read, ads_management, business_management (confirm the scopes the toolkit needs in Composio's toolkit docs). Redirect URI must match step 4 exactly. Composio will receive a user access token (short-lived, exchangeable to ~60-day long-lived); refresh behavior depends on Composio's implementation.",
+      "owner": "you",
+      "url": null
+    }
+  ],
+  "requirements": [
+    "Personal Facebook account to register as a Meta developer (must stay logged in/with 2FA ready).",
+    "A Meta business portfolio (Business Manager) connected to the app; an Admin of that business must complete Business Verification.",
+    "Business Verification documents (legal registration, tax or utility document, matching legal name/address/phone/website); exact document list lives in Meta Business Help Center, not the developer docs.",
+    "For managing other businesses' ad accounts: Advanced Access to ads_read and/or ads_management via App Review, plus Marketing API access tier Full access.",
+    "A publicly reachable app/website where reviewers can log in with test credentials, a privacy policy URL, and a screencast.",
+    "Active ad account(s) to test against (users need an ad account to connect).",
+    "Annual Data Use Checkup once the app is live with a use case or advanced access.",
+    "No fees to register or review (not explicitly confirmed on a fetched page)."
+  ],
+  "gotchas": [
+    "Terminology changed: 'Ads Management Standard Access' is now the Marketing API Access Tier; its 'Standard Access' became 'Limited Access' and 'Advanced Access' became 'Full Access'. This is separate from the platform-wide Standard/Advanced Access ladder per permission. You need both.",
+    "Limited tier is 'for development only' and rate limits are very tight (Development tier score max 60, blocked 300 s at max), so a production agent on Limited will throttle quickly.",
+    "Business Verification gates Advanced Access: without it users from other businesses cannot grant your app permissions.",
+    "Strict Mode redirect URI: exact full-URI match including any parameters; HTTPS required. The Composio callback must be entered verbatim. The authorization doc recommends a trailing '/' on redirect_uri in the OAuth dialog, but the login security doc does not mention trailing slashes; verify the exact string Composio sends matches your list entry.",
+    "Facebook Login for Business uses config_id instead of scope; BISUT configs say scope should not be used. A config_id based flow may not be compatible with a generic OAuth client such as Composio's; classic Facebook Login with scope is the safer assumption. Apps created as FLB apps cannot switch back to classic login.",
+    "Standard Access is automatic for Business apps, but 'some API calls may not be available' at Standard Access.",
+    "Long-lived user tokens last about 60 days and cannot be exchanged once expired; users must re-authorize. Long-lived Page tokens have no fixed expiry. Business integration system user tokens (FLB, Tech Providers only) default to never expiring but require config_id flow.",
+    "ads_management and business_management list pages_read_engagement and pages_show_list as dependencies, which you must also request/justify.",
+    "Maintaining Advanced Access/Full tier requires continued usage: at least 500 successful Marketing API calls in 15 days with error rate under 15% over the last 500 calls.",
+    "Review reports (community, not official) cite rejections for: asking for permissions not yet used, vague notes, screencasts that skip functionality, test accounts blocked by 2FA/email verification/empty workspace/broken staging server, and legal name mismatch with Business Manager.",
+    "Meta can reject the entire submission if it cannot access your app for testing.",
+    "Page creation is not allowed via API at any tier.",
+    "Annual Data Use Checkup is required for live apps with advanced access; consequence of missing it was not stated on the fetched page."
+  ],
+  "blockers": [
+    {
+      "blocker": "Business Verification stuck or rejected",
+      "symptom": "Verification status stays 'in review' or fails; Advanced Access request is blocked or other businesses cannot grant permissions.",
+      "whatToDo": "Ensure legal business name, address, phone and website exactly match documents and the Business Manager name; use an Admin account; resubmit with clearer documents. Start verification before building.",
+      "escalation": "Meta Business Help Center / Business Support chat (availability varies); Meta developer community forum https://developers.facebook.com/community/"
+    },
+    {
+      "blocker": "App Review rejected for ads_management / ads_read / business_management",
+      "symptom": "Rejection message citing inability to test, screencast not showing the permission in use, or insufficient use-case explanation.",
+      "whatToDo": "Provide test credentials with no 2FA/email wall and a pre-populated test ad account, a screencast starting at the login page showing the consent flow and ad metrics in-app, and per-permission step-by-step notes with timestamps. Request only permissions in use. Test the instructions in a private window on a different network.",
+      "escalation": "Meta Developer Support (Bug/Support tool in the developer dashboard) and https://developers.facebook.com/community/"
+    },
+    {
+      "blocker": "Cannot get the 'Request advanced access' button to enable / permission shows inactive",
+      "symptom": "Button greyed out or scope shows as not active even after setup.",
+      "whatToDo": "Make at least one successful API call for the permission as a role user, wait up to ~24 h (community report), then retry; confirm the Marketing API product is added.",
+      "escalation": "Meta Developer Community forum"
+    },
+    {
+      "blocker": "Rate limiting on Limited/Development tier",
+      "symptom": "Errors 17 (subcode 2446079), 613 (subcode 1487742) or 80000/80003/80004/80014 'too many calls from this ad-account'.",
+      "whatToDo": "Back off with retries, reduce calls, and upgrade to Full access via +Upgrade after App Review approval.",
+      "escalation": null
+    },
+    {
+      "blocker": "Review queue slowdown in 2026",
+      "symptom": "Submission pending for 2-3+ weeks.",
+      "whatToDo": "Submit one clean, complete request; avoid resubmitting repeatedly; plan for ~20 days of buffer (community/vendor claim).",
+      "escalation": null
+    }
+  ],
+  "agentCanDo": [
+    "Draft the per-permission use-case justifications and step-by-step reviewer instructions.",
+    "Write a screencast script and checklist (login page, consent dialog, ad metrics shown in-app) and verify the app flow works.",
+    "Build and run the integration against a test ad account to generate the required Marketing API call volume and handle rate-limit/backoff.",
+    "Implement long-lived token exchange (fb_exchange_token) and error handling if not delegated to Composio.",
+    "Prepare the Composio custom auth config values (redirect URI, scopes) and verify the redirect URI string matches exactly.",
+    "Prepare a privacy policy and data-deletion page draft for the human to publish."
+  ],
+  "youMustDo": [
+    "Register the Meta developer account and log in (including 2FA).",
+    "Create the business portfolio and, as its Admin, complete Business Verification (identity/legal documents).",
+    "Create the app in the dashboard and accept Meta Platform Terms and Developer Policies.",
+    "Record and submit the screencast and the App Review request; supply real test credentials.",
+    "Click +Upgrade for the Marketing API access tier and switch the app to Live mode.",
+    "Complete the annual Data Use Checkup.",
+    "Copy the App Secret and enter it in Composio; never share it with the agent beyond what is needed."
+  ],
+  "composio": {
+    "redirectUri": "https://backend.composio.dev/api/v3/toolkits/auth/callback",
+    "note": "Add this exact URI to Valid OAuth Redirect URIs in the Meta app (Strict Mode requires exact match, HTTPS). Composio has no managed Meta Ads app, so only your own app's role users can authorize until Business Verification, App Review and Live mode are done. Prefer scope-based classic Facebook Login; Facebook Login for Business needs config_id instead of scope, and compatibility with Composio's auth config was not confirmed. Scopes likely needed: ads_read, ads_management, business_management (toolkit's exact scope list not verified)."
+  },
+  "evidence": [
+    {
+      "claim": "Marketing API terminology changed: 'Ads Management Standard Access' is now the Marketing API Access Tier with Limited and Full access; the Full threshold is 500 calls in 15 days.",
+      "status": "verified",
+      "source": "https://developers.facebook.com/docs/marketing-api/overview/authorization",
+      "note": "Page was fetched via summarizing tool; date of the rename not stated."
+    },
+    {
+      "claim": "Platform-wide Standard Access is automatic for Business apps; Advanced Access requires App Review per permission; maintaining it needs 500 successful calls in 15 days with <15% error rate over last 500.",
+      "status": "verified",
+      "source": "https://developers.facebook.com/docs/marketing-api/overview/authorization",
+      "note": null
+    },
+    {
+      "claim": "Limited tier is 'for development only'; Limited gives 1 system user + 1 admin system user and limited Business Manager API; Full gives 10 system users + 1 admin and full Business Manager/Catalog API; upgrade via +Upgrade in App Dashboard.",
+      "status": "verified",
+      "source": "https://developers.facebook.com/docs/marketing-api/overview/authorization",
+      "note": null
+    },
+    {
+      "claim": "Managing only your own ad accounts needs only standard access to ads_read/ads_management; managing other people's ad accounts needs advanced access.",
+      "status": "verified",
+      "source": "https://developers.facebook.com/docs/marketing-api/overview/authorization",
+      "note": null
+    },
+    {
+      "claim": "ads_management/ads_read/business_management descriptions, dependencies (pages_read_engagement, pages_show_list for ads_management and business_management), and screencast must show login flow and ad performance data.",
+      "status": "verified",
+      "source": "https://developers.facebook.com/documentation/development/permissions",
+      "note": "Page does not explicitly state App Review/Advanced Access/Business Verification per permission; the cross-business requirement is inferred from the submission-prompt wording."
+    },
+    {
+      "claim": "Business Verification is needed for apps requesting advanced access (as of Feb 1, 2023) or letting other businesses grant permissions; only a business Admin can complete it; app is linked at Settings > Basic > Verification; without it users from other Businesses cannot grant permissions.",
+      "status": "verified",
+      "source": "https://developers.facebook.com/docs/development/release/business-verification",
+      "note": "Page lists no documents, timelines, 2025-2026 changes or rejection handling."
+    },
+    {
+      "claim": "Business Verification takes under 1 day for some and 10+ days for others; legal name must match Business Manager name.",
+      "status": "inferred",
+      "source": "https://medium.com/@bilal.105.ahmed/facebook-marketing-api-the-advanced-access-trap-that-nearly-killed-my-project-7227ea2ee2c2",
+      "note": "Community report (a Medium comment said <1 day; the Meta community thread title says 'in review 10 days' but its page content did not confirm duration). Name-match claim from https://bundle.social/blog/meta-app-review-20-days (vendor blog). Not official."
+    },
+    {
+      "claim": "App Review: Meta tests the app; if Meta cannot access the app the entire submission is rejected; permission not testable is not approved. Apps used only by role users need no review.",
+      "status": "verified",
+      "source": "https://developers.facebook.com/docs/resp-plat-initiatives/individual-processes/app-review",
+      "note": "Page does not mention screencast, instructions, test credentials or timelines."
+    },
+    {
+      "claim": "App Review timing has lengthened in 2026: 1-3 days until 2025, 4-6 days early 2026, 9-12 days April 2026, 17-19 days May 2026, Meta reportedly warns of ~20 days.",
+      "status": "inferred",
+      "source": "https://bundle.social/blog/meta-app-review-20-days",
+      "note": "Vendor blog (sells a social API); article says its table is not official Meta data. Could not find an official Meta statement of 20 days."
+    },
+    {
+      "claim": "Advanced Access review took over a week for one developer; each permission is requested separately; request button activation may need a test API call and ~24 h wait.",
+      "status": "inferred",
+      "source": "https://medium.com/@bilal.105.ahmed/facebook-marketing-api-the-advanced-access-trap-that-nearly-killed-my-project-7227ea2ee2c2",
+      "note": "Single community post and comments; anecdotal."
+    },
+    {
+      "claim": "Common rejection reasons: unused permissions requested, vague notes, screencast skipping functionality, test accounts failing or blocked by 2FA/email walls/geo restrictions.",
+      "status": "inferred",
+      "source": "https://bundle.social/blog/meta-app-review-20-days",
+      "note": "Vendor blog, not official Meta guidance."
+    },
+    {
+      "claim": "New apps start in Development mode (only role users, hidden); Live mode accepts requests from anyone but only App Review-approved permissions; switch via toolbar toggle after finishing development and App Review.",
+      "status": "verified",
+      "source": "https://developers.facebook.com/docs/development/build-and-test/app-modes",
+      "note": "Page does not state privacy policy URL/category/data deletion requirements for going Live."
+    },
+    {
+      "claim": "Create app flow: register as developer, https://developers.facebook.com/apps/creation/, name+email, use cases, business portfolio, requirements, dashboard; use cases auto-add products and cannot be removed; 15-app limit without Meta Verified Business.",
+      "status": "verified",
+      "source": "https://developers.facebook.com/docs/development/create-an-app",
+      "note": "Page does not name a 'Business' app type nor the Marketing API use case; the old 'Business app type' framing is not confirmed in the current flow."
+    },
+    {
+      "claim": "Marketing API get-started requires an active ad account, a Meta developer account and an app; covers authorization and token renewal.",
+      "status": "verified",
+      "source": "https://developers.facebook.com/docs/marketing-api/get-started",
+      "note": "Does not describe the Marketing API use case, business portfolios or system users."
+    },
+    {
+      "claim": "Facebook Login for Business: preferred for Tech Providers; configurations produce config_id which replaces scope; user tokens are short-lived; BISUT tokens default to never expire, use authorization code only and are Tech Provider only; apps created as FLB cannot switch back; classic Facebook Login does not support config_id.",
+      "status": "verified",
+      "source": "https://developers.facebook.com/documentation/facebook-login/facebook-login-for-business",
+      "note": "Whether FLB is mandatory for new business apps in 2026 was not stated on the page."
+    },
+    {
+      "claim": "Long-lived user tokens last about 60 days; exchange via oauth/access_token with grant_type=fb_exchange_token from the server; expired tokens cannot be exchanged.",
+      "status": "verified",
+      "source": "https://developers.facebook.com/docs/facebook-login/guides/access-tokens/get-long-lived",
+      "note": "Page says short-lived tokens expire 'in hours' without a number; system user token details not on this page."
+    },
+    {
+      "claim": "Rate limits: Development tier score max 60 (block 300 s) vs Full access 9000 (block 60 s); BUC per hour ads_management 300+40x active ads (dev) vs 100000+40x active ads (full); ads_insights 600+400x vs 190000+400x; 100 mutation QPS per app/ad account.",
+      "status": "verified",
+      "source": "https://developers.facebook.com/docs/marketing-api/overview/rate-limiting",
+      "note": null
+    },
+    {
+      "claim": "Valid OAuth Redirect URIs: Strict Mode required for all apps, exact full-URI match, HTTPS enforced; Client OAuth Login and Web OAuth Login toggles.",
+      "status": "verified",
+      "source": "https://developers.facebook.com/docs/facebook-login/security/",
+      "note": "Page does not address trailing slashes."
+    },
+    {
+      "claim": "Data Use Checkup is annual (since Jan 2024) for developers with live apps that have a use case or advanced access.",
+      "status": "verified",
+      "source": "https://developers.facebook.com/docs/development/maintaining-data-access/data-use-checkup",
+      "note": "Consequences and 2025-2026 changes not stated on page."
+    },
+    {
+      "claim": "Composio redirect URI is https://backend.composio.dev/api/v3/toolkits/auth/callback.",
+      "status": "unverified",
+      "source": null,
+      "note": "Taken from the task brief/schema; Composio docs not fetched in this session."
+    },
+    {
+      "claim": "Composio METAADS toolkit needs scopes ads_read, ads_management, business_management.",
+      "status": "unverified",
+      "source": null,
+      "note": "Assumed from typical Marketing API usage; Composio toolkit scope list not checked."
+    }
+  ],
+  "uncertainties": [
+    "No official timeline for Business Verification or App Review exists in the fetched docs; the 2026 slowdown (~17-20 days) comes from a vendor blog and anecdotes only.",
+    "Exact documents Meta accepts for Business Verification are in the Business Help Center (facebook.com/business/help), which was not fetched/readable this session.",
+    "The current name/location of the Marketing API use case in the app creation flow (and whether a 'Business' app type still exists) was not confirmed on the official docs page.",
+    "Whether Composio's custom auth flow can use Facebook Login for Business (config_id) or only classic scope-based login is unknown; whether Meta now forces FLB for new business apps in 2026 was not confirmed.",
+    "System user token specifics (creation, expiry, Marketing API-specific doc) were not found on fetched pages; the /marketing-api/overview/authorization/ trailing-slash URL failed to fetch.",
+    "Requirements to switch to Live mode (privacy policy URL, data deletion URL, category) and the consequence of missing a Data Use Checkup were not stated on fetched pages.",
+    "Specific App Review submission format (screencast length, instruction fields) beyond what is in the permissions reference was not found in official docs; the rest is community guidance.",
+    "Fees: no fees mentioned, but absence of fees was not explicitly confirmed."
+  ],
+  "lastChecked": "2026-10-20"
+}

@@ -1,0 +1,267 @@
+{
+  "slug": "twitter",
+  "name": "X (formerly Twitter) API v2",
+  "composioSlug": "TWITTER",
+  "website": "https://console.x.com",
+  "summary": "Sign in at the X Developer Console, accept the Developer Agreement, create an app with a name, description and use case, enable OAuth 2.0 (confidential Web App), add the Composio callback URL, load pay-per-use credits, and copy the Client ID and Secret into a Composio custom auth config.",
+  "difficulty": 2,
+  "difficultyWhy": "App creation is self-serve and fast, and the docs describe no manual approval step. The friction is that the API is pay-per-use, so you need a saved payment card and a credit balance before requests succeed, and X reserves the right to suspend apps whose use deviates from the stated use case.",
+  "time": {
+    "setup": "~15 min",
+    "approval": "none documented (no review step described in X docs)",
+    "total": "same day (add time for payment/credit setup)"
+  },
+  "gatingModel": "self-serve-with-limits",
+  "devModeLimits": "No documented pre-approval sandbox or user cap. Pay-per-usage plans are capped at 3 million Post reads per monthly billing cycle, requests are blocked once your spending limit is hit or the credit balance is negative, and higher volume requires an Enterprise plan. Per-endpoint rate limits apply (for example POST /2/tweets 100/15min per user, 10,000/24hrs per app).",
+  "stages": [
+    { "name": "Sign in to Developer Console and accept Developer Agreement", "duration": "5 min", "owner": "you" },
+    { "name": "Create app (name, description, use case)", "duration": "5 min", "owner": "you" },
+    { "name": "Configure OAuth 2.0 auth settings, callback URL, scopes/permissions", "duration": "5 min", "owner": "you" },
+    { "name": "Add payment method / buy credits, set spending limit", "duration": "5-10 min", "owner": "you" },
+    { "name": "Create Composio custom auth config with Client ID/Secret", "duration": "5 min", "owner": "agent" }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "title": "Sign in to the X Developer Console",
+      "detail": "Go to console.x.com, sign in with the X account that will own the app, and accept the Developer Agreement. Use an account that represents your company or product, since the app is tied to it.",
+      "owner": "you",
+      "url": "https://console.x.com"
+    },
+    {
+      "n": 2,
+      "title": "Add credits / payment method (pay-per-use)",
+      "detail": "X API v2 is billed pay-per-usage with no subscriptions or minimum spend. Buy credits in the Developer Console, optionally enable auto-recharge (requires a saved default payment method) and set a maximum spend per billing cycle. Requests are blocked when the balance goes negative or the spending limit is reached. Exact placement of the billing screens in the console was not read this session.",
+      "owner": "you",
+      "url": "https://docs.x.com/x-api/getting-started/pricing"
+    },
+    {
+      "n": 3,
+      "title": "Create the app",
+      "detail": "Click New App / Create App and enter a name, description and use case. Be accurate and specific about the use case: the X Developer Policy says failing to disclose a substantive change to your approved use case can lead to suspension. Keys and tokens are shown only once, so save them immediately; regenerating invalidates the old ones. Use separate apps for dev, staging and production (policy allows up to three apps for the same service, registered to one account and clearly labeled).",
+      "owner": "you",
+      "url": "https://docs.x.com/resources/fundamentals/developer-apps"
+    },
+    {
+      "n": 4,
+      "title": "Enable OAuth 2.0 and choose app type",
+      "detail": "Open the app's authentication settings (App settings) and select OAuth 2.0 (you may enable OAuth 1.0a as well, but Composio needs OAuth 2.0 client credentials). Choose a confidential type, Web App or Automated App/Bot, so that a Client Secret is issued. Native App and Single Page App are public clients with no secret.",
+      "owner": "you",
+      "url": "https://docs.x.com/resources/fundamentals/authentication/oauth-2-0/authorization-code"
+    },
+    {
+      "n": 5,
+      "title": "Add the Composio callback URL",
+      "detail": "In the app's callback URL allowlist add exactly: https://backend.composio.dev/api/v3/toolkits/auth/callback . Matching is exact (including trailing slashes), maximum 10 callback URLs per app, https required for production. If the console also asks for a Website URL, supply your own product URL (the docs read this session do not describe that field).",
+      "owner": "you",
+      "url": "https://docs.x.com/resources/fundamentals/developer-apps"
+    },
+    {
+      "n": 6,
+      "title": "Copy Client ID and Client Secret",
+      "detail": "In the app's Keys and Tokens section copy the OAuth 2.0 Client ID and Client Secret (the secret is shown once for confidential apps; regenerate if lost). Do not confuse these with the OAuth 1.0a API Key/Secret or the Bearer token.",
+      "owner": "you",
+      "url": "https://docs.x.com/resources/fundamentals/authentication/oauth-2-0/authorization-code"
+    },
+    {
+      "n": 7,
+      "title": "Create the Composio custom auth config",
+      "detail": "In Composio, create a custom auth config for toolkit TWITTER (OAuth2) with the Client ID and Client Secret, and select the scopes your agent needs. Typical set: tweet.read tweet.write users.read offline.access, plus like.read/like.write, follows.read/follows.write, bookmark.read/bookmark.write, dm.read/dm.write, media.write only if needed. Always include offline.access if you want refresh tokens.",
+      "owner": "agent",
+      "url": null
+    },
+    {
+      "n": 8,
+      "title": "Test with a real connection",
+      "detail": "Run a connect flow from your Composio project against your own X account, verify tweet.read and one write call work, and check the Developer Console usage/credit meter to confirm billing is behaving as expected.",
+      "owner": "you",
+      "url": null
+    }
+  ],
+  "requirements": [
+    "An X account (to sign in at console.x.com) and acceptance of the Developer Agreement",
+    "A payment method and a credit balance: X API v2 is pay-per-usage (new users may earn $20 in free credits when saving a first eligible payment card, per the pricing page)",
+    "A description and use case entered at app creation, consistent with actual use",
+    "Compliance with the X Developer Policy and Automation Rules for any write actions (posting, following, DMs)",
+    "Enterprise plan only if you need volume above the pay-per-usage cap (3 million Post reads per monthly billing cycle) or team management"
+  ],
+  "gotchas": [
+    "Pay-per-use means every read and write consumes credits (examples: post create $0.015, post create containing a URL $0.20, post read $0.005 per resource). If the balance goes negative or the spend limit is hit, API requests are blocked, which will look like connection or tool-call failures to your users.",
+    "Rate limits and usage billing are separate: you can hit rate limits without extra cost, or be within limits and still incur cost.",
+    "Redirect URI must exactly match an allowlisted callback URL (trailing slash matters); max 10 per app; use http://127.0.0.1 not localhost for local dev (irrelevant for Composio, which uses https).",
+    "Authorization codes expire 30 seconds after approval.",
+    "OAuth 2.0 access tokens last two hours by default; a refresh token is only issued if the offline.access scope is requested. Docs read this session do not state refresh token lifetime or rotation, so store the newest refresh token returned on each refresh.",
+    "Confidential clients authenticate to the token endpoint with HTTP Basic (Client ID:Secret). Public clients (Native, SPA) have no secret and Composio custom auth expects a client secret, so choose Web App or Automated App/Bot.",
+    "App permission levels (Read, Read and write, Read+write+DM) are documented for OAuth 1.0a. For OAuth 2.0 the granted capability comes from the requested scopes; check that the app permission setting is not left at Read only if write calls fail. Changing permissions forces users to re-authorize.",
+    "Scope names in X docs are inconsistent: the scope table lists follows.read/follows.write while an example URL uses account.follows.read/write. Use the table names.",
+    "Do not register multiple apps for the same or overlapping use cases (only dev/staging/prod, max three, same account, clearly labeled). A white-label offering where each customer gets their own app/branding needs separate approval from X.",
+    "Your product must monitor its own users for policy violations (spam, bulk follows, identical content across accounts); failure can lead to suspension of the developer app and thereby all connected users."
+  ],
+  "blockers": [
+    {
+      "blocker": "API calls fail with payment or credit errors",
+      "symptom": "Requests rejected after setup works; spending limit reached or negative balance",
+      "whatToDo": "Add credits, enable auto-recharge, raise the per-cycle spending limit in the Developer Console, and monitor usage.",
+      "escalation": "https://devcommunity.x.com"
+    },
+    {
+      "blocker": "Redirect URI mismatch",
+      "symptom": "Authorization page error stating the redirect_uri is invalid or does not match",
+      "whatToDo": "Add https://backend.composio.dev/api/v3/toolkits/auth/callback exactly to the app's callback URLs with no trailing slash differences, then save and retry.",
+      "escalation": null
+    },
+    {
+      "blocker": "App suspended or API access revoked",
+      "symptom": "All users' tool calls start failing with 401/403 or the app disappears from the console",
+      "whatToDo": "Review the X Developer Policy and Automation Rules, fix the violation and disclose use-case changes, then appeal through X support. Keep separate dev/prod apps so testing does not endanger production.",
+      "escalation": "https://devcommunity.x.com"
+    },
+    {
+      "blocker": "No client secret issued",
+      "symptom": "Only a Client ID is shown in Keys and Tokens",
+      "whatToDo": "App type is a public client (Native App or SPA). Switch the app type to Web App or Automated App/Bot in the authentication settings and regenerate the secret.",
+      "escalation": null
+    },
+    {
+      "blocker": "Volume exceeds pay-per-usage cap",
+      "symptom": "Post reads blocked after 3 million in a billing cycle",
+      "whatToDo": "Contact X to upgrade to an Enterprise plan via the form linked from the pricing page.",
+      "escalation": "https://docs.x.com/x-api/getting-started/pricing"
+    }
+  ],
+  "agentCanDo": [
+    "Prepare the exact callback URL, scope list and app-type instructions for the developer",
+    "Create the Composio custom auth config once given the Client ID and Client Secret",
+    "Run a test connection and sample API calls through Composio, and explain errors such as redirect mismatch, 401/403, or credit exhaustion",
+    "Draft an accurate use-case description and a policy-compliance checklist for the developer to paste in"
+  ],
+  "youMustDo": [
+    "Sign in to console.x.com with your X account (login, 2FA) and accept the Developer Agreement",
+    "Enter payment details, buy credits and set spending limits (payment)",
+    "Create the app, enable OAuth 2.0, add the callback URL and copy the Client ID/Secret",
+    "Be truthful in the use-case description and comply with X policies"
+  ],
+  "composio": {
+    "redirectUri": "https://backend.composio.dev/api/v3/toolkits/auth/callback",
+    "note": "Composio has no managed OAuth app for TWITTER, so you must supply your own OAuth 2.0 Client ID and Client Secret from a confidential app type (Web App or Automated App/Bot). Allowlist the redirect URI exactly. Request offline.access in the auth config scopes so Composio can refresh the 2-hour access tokens. Note that all of your end users' API usage is billed to your X developer app's credits, since Composio uses your app credentials."
+  },
+  "evidence": [
+    {
+      "claim": "X API v2 uses pay-per-usage pricing with no subscriptions; the pricing page describes no fixed Free/Basic/Pro tiers, and Enterprise appears only as the upgrade path for higher volume",
+      "status": "verified",
+      "source": "https://docs.x.com/x-api/getting-started/pricing",
+      "note": "Read via WebFetch on 2026-10-20. The page gives no effective date for the prices and says current rates are in the Developer Console."
+    },
+    {
+      "claim": "Example prices: Post read $0.005, User read $0.010, Post create $0.015, Post create with URL $0.200, owned reads $0.001",
+      "status": "verified",
+      "source": "https://docs.x.com/x-api/getting-started/pricing",
+      "note": "Page text was readable (not JS-blocked) on 2026-10-20; prices may change."
+    },
+    {
+      "claim": "Pay-per-usage capped at 3 million Post reads per monthly billing cycle; spending limits and negative balance block requests; auto-recharge needs a saved default payment method; no minimum spend; new users may earn $20 free credits on saving a first eligible card",
+      "status": "verified",
+      "source": "https://docs.x.com/x-api/getting-started/pricing",
+      "note": null
+    },
+    {
+      "claim": "The legacy Free tier was effectively discontinued in Feb 2026 and Basic/Pro were kept as opt-in legacy options",
+      "status": "inferred",
+      "source": "https://roboin.io/article/en/2026/02/08/x-transitions-api-to-pay-per-use-model-ending-free-plan/",
+      "note": "Third-party news article dated 2026-02-08, not an official X page. Official docs read this session do not mention legacy tiers either way."
+    },
+    {
+      "claim": "Sign up at console.x.com with an X account and accept the Developer Agreement; create app with name and description; credentials shown once",
+      "status": "verified",
+      "source": "https://docs.x.com/resources/fundamentals/developer-portal",
+      "note": null
+    },
+    {
+      "claim": "App creation asks for name, description and use case; permission levels Read / Read and write / Read, write and DMs are documented for OAuth 1.0a; app types Web App, Automated App/Bot (confidential), Native App, Single Page App (public)",
+      "status": "verified",
+      "source": "https://docs.x.com/resources/fundamentals/developer-apps",
+      "note": null
+    },
+    {
+      "claim": "Callback URLs: exact match including trailing slash, max 10 per app, https for production, http://127.0.0.1 for local dev (not localhost), some protocols disallowed",
+      "status": "verified",
+      "source": "https://docs.x.com/resources/fundamentals/developer-apps",
+      "note": null
+    },
+    {
+      "claim": "OAuth 2.0 Authorization Code with PKCE: authorize URL https://x.com/i/oauth2/authorize, token URL https://api.x.com/2/oauth2/token, S256 or plain challenge, state up to 500 chars, redirect_uri must match app settings",
+      "status": "verified",
+      "source": "https://docs.x.com/resources/fundamentals/authentication/oauth-2-0/authorization-code",
+      "note": null
+    },
+    {
+      "claim": "Scope list: tweet.read, tweet.write, tweet.moderate.write, users.email, users.read, follows.read/write, offline.access, space.read, mute.read/write, like.read/write, list.read/write, block.read/write, bookmark.read/write, dm.read/write, media.write, broadcast.read/write",
+      "status": "verified",
+      "source": "https://docs.x.com/resources/fundamentals/authentication/oauth-2-0/authorization-code",
+      "note": "The same page's example URL uses account.follows.read/write which are not in the table."
+    },
+    {
+      "claim": "Access tokens valid two hours by default; offline.access required to receive a refresh token; authorization codes expire 30 seconds after approval",
+      "status": "verified",
+      "source": "https://docs.x.com/resources/fundamentals/authentication/oauth-2-0/authorization-code",
+      "note": "The separate user-access-token page does not state a lifetime."
+    },
+    {
+      "claim": "Refresh via POST to the token endpoint with grant_type=refresh_token; confidential clients use Basic auth with Client ID:Secret; revoke endpoint https://api.x.com/2/oauth2/revoke",
+      "status": "verified",
+      "source": "https://docs.x.com/resources/fundamentals/authentication/oauth-2-0/user-access-token",
+      "note": "Refresh token lifetime and rotation behavior are not specified on this page."
+    },
+    {
+      "claim": "Confidential clients (Web App, Automated App/Bot) receive a client secret; public clients (Native, SPA) cannot keep a secret; Client ID/Secret found in Keys and Tokens",
+      "status": "verified",
+      "source": "https://docs.x.com/resources/fundamentals/authentication/oauth-2-0/authorization-code",
+      "note": null
+    },
+    {
+      "claim": "Rate limits per 15 min unless noted: POST /2/tweets 100/user and 10,000/24hrs per app; GET /2/users/me 75/user; GET /2/tweets/search/recent 450 app/300 user; DELETE /2/tweets/:id 50/user; POST /2/users/:id/following 50/user; Enterprise has custom limits",
+      "status": "verified",
+      "source": "https://docs.x.com/x-api/fundamentals/rate-limits",
+      "note": "Page does not describe limits varying by tier; Developer Console is the place to view current limits."
+    },
+    {
+      "claim": "No manual app review or approval step is described for getting API access: sign up, create app, get credentials",
+      "status": "verified",
+      "source": "https://docs.x.com/x-api/getting-started/about-x-api",
+      "note": "Absence of mention is not proof no review exists; the Developer Policy mentions an 'approved use case', so some review may occur behind the scenes."
+    },
+    {
+      "claim": "X may suspend or permanently revoke API access for policy violations; undisclosed substantive use-case changes can cause suspension; write-action services must follow Automation Rules; rate limits may not be circumvented; no multiple apps for the same use case except up to three dev/staging/prod apps on one account",
+      "status": "verified",
+      "source": "https://docs.x.com/developer-terms/policy.md",
+      "note": "Policy states it may change without notice."
+    },
+    {
+      "claim": "Enterprise-only team management (inviting members by X handle)",
+      "status": "verified",
+      "source": "https://docs.x.com/resources/fundamentals/developer-portal",
+      "note": null
+    },
+    {
+      "claim": "OAuth 1.0a and OAuth 2.0 can both be enabled on the same app; Composio only needs OAuth 2.0",
+      "status": "verified",
+      "source": "https://docs.x.com/resources/fundamentals/authentication/oauth-2-0/authorization-code",
+      "note": "That Composio only needs OAuth 2.0 is inferred from the task context that Composio takes a client ID/secret with a single redirect URI."
+    },
+    {
+      "claim": "The Composio redirect URI works with X (callback allowlisted exactly) and nothing blocks third-party domains",
+      "status": "inferred",
+      "source": "https://docs.x.com/resources/fundamentals/developer-apps",
+      "note": "Docs say any https callback can be allowlisted; no Composio-specific X test was done."
+    }
+  ],
+  "uncertainties": [
+    "Could not confirm whether new accounts must have a payment method on file before the first API call succeeds or whether the initial credit voucher covers testing; pricing page says new users can earn $20 credits on saving a card.",
+    "No effective date was found on the official pricing page, so the pay-per-use model is confirmed as current only as of the 2026-10-20 fetch; legacy Free/Basic/Pro status is known only from a third-party article (Feb 2026).",
+    "Refresh token lifetime and whether refresh tokens rotate on use are not stated in the official docs read this session.",
+    "Official docs read do not describe the 'User authentication settings' screen field by field (including whether Website URL and Terms/Privacy URLs are mandatory) or how OAuth 2.0 app permission settings interact with scopes.",
+    "Whether X performs any human review of the use-case description at app creation, and how long appeals of suspensions take, could not be verified.",
+    "Could not view the logged-in Developer Console itself (login wall), so exact UI labels and billing screen locations are taken from docs, not from the UI."
+  ],
+  "lastChecked": "2026-10-20"
+}

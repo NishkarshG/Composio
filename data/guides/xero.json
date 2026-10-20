@@ -1,0 +1,307 @@
+{
+  "slug": "xero",
+  "name": "Xero",
+  "composioSlug": "XERO",
+  "website": "https://developer.xero.com",
+  "summary": "Self-serve: create a Web app in the Xero developer portal in minutes, but since 2 March 2026 a free Starter app is capped at 5 connected organisations, 50 needs a paid Core plan (card on file), and more than 50 requires App Partner certification.",
+  "difficulty": 3,
+  "difficultyWhy": "Credentials are instant and free, but real multi-user rollout hits a hard connection cap: 5 free, 50 on Core (AUD 35/month), and 1,000+ only after App Certification (10 active non-demo beta customers plus technical checkpoints). Granular scopes introduced in 2026 add migration work.",
+  "time": {
+    "setup": "~15 min",
+    "approval": "none for up to 5 connections (Starter) or 50 (Core, card required); App Certification for >50 connections: timeline not published (likely weeks, unverified)",
+    "total": "same day for testing / up to 50 orgs; weeks to months for certification"
+  },
+  "gatingModel": "self-serve-with-limits",
+  "devModeLimits": "New apps default to the Starter plan: unlimited data access but max 5 connections (authorised Xero organisations), 1,000 API calls per day per organisation, and no App Store listing. Adding a 6th connection requires entering payment details, which moves the app to Core (max 50 connections, 5,000 calls/day/org, AUD 35/month). Demo Company can be used for testing but does not count as a beta customer for certification. Apps created on or after 2 March 2026 can only use granular scopes.",
+  "stages": [
+    { "name": "Sign up for Xero account and open developer portal", "duration": "5 min", "owner": "you" },
+    { "name": "Create Web app (auth code flow), set redirect URI, generate client secret", "duration": "10 min", "owner": "you" },
+    { "name": "Create Composio custom auth config with client ID/secret and scopes", "duration": "5 min", "owner": "agent" },
+    { "name": "Add payment card to move from Starter (5) to Core (50 connections), if needed", "duration": "5 min", "owner": "you" },
+    { "name": "Onboard 10 active non-demo customer connections, complete certification checkpoints and submit (only if >50 connections needed)", "duration": "weeks to months", "owner": "provider" }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "title": "Sign in to the Xero developer portal",
+      "detail": "Go to developer.xero.com and sign in with a Xero account (create a free Xero login at xero.com if you have none; community guide says a Xero trial is only needed to add the app but you do not have to use it).",
+      "owner": "you",
+      "url": "https://developer.xero.com"
+    },
+    {
+      "n": 2,
+      "title": "Create a new app",
+      "detail": "Open My Apps and choose New app. Fields: App name (shown to users when they connect), Integration type = Web app (standard authorization code flow with client secret), Company or application URL, Redirect URI. Other integration types exist: PKCE (native/SPA, no secret) and Custom Connection (machine-to-machine for a single org, premium, AU/NZ/UK/US orgs only), but for Composio use Web app.",
+      "owner": "you",
+      "url": "https://developer.xero.com/app/manage"
+    },
+    {
+      "n": 3,
+      "title": "Set redirect URI to Composio's callback",
+      "detail": "Add https://backend.composio.dev/api/v3/toolkits/auth/callback as a redirect URI. Xero requires an absolute URI, does not allow wildcards, and allows up to 50 redirect URIs per app.",
+      "owner": "you",
+      "url": "https://developer.xero.com/faq/oauth2"
+    },
+    {
+      "n": 4,
+      "title": "Generate the client secret",
+      "detail": "In the app's Configuration page under OAuth 2.0 credentials, copy the Client ID and click Generate a secret. The secret is displayed once; store it securely.",
+      "owner": "you",
+      "url": "https://developer.xero.com/app/manage"
+    },
+    {
+      "n": 5,
+      "title": "Choose scopes",
+      "detail": "Always include offline_access (otherwise no refresh token) and openid/profile/email if needed. Apps created on or after 2 March 2026 must use granular accounting scopes (e.g. accounting.invoices, accounting.payments, accounting.banktransactions, accounting.manualjournals, accounting.contacts, accounting.settings, accounting.reports.profitandloss.read, accounting.reports.balancesheet.read, each with a .read variant for read-only). Older apps may still use accounting.transactions and accounting.reports.read until the 13 September 2027 deadline. Verify exact scope strings in the Xero scopes docs before configuring.",
+      "owner": "you",
+      "url": "https://devblog.xero.com/upcoming-changes-to-xero-accounting-api-scopes-705c5a9621a0"
+    },
+    {
+      "n": 6,
+      "title": "Create the Composio custom auth config",
+      "detail": "In Composio, create a custom auth config for the XERO toolkit using the Xero Client ID, Client Secret and the chosen scopes; then connect a Xero test user.",
+      "owner": "agent",
+      "url": null
+    },
+    {
+      "n": 7,
+      "title": "Test with Demo Company, then a real org",
+      "detail": "During the consent flow the user picks which Xero organisation(s) to authorise; every authorised org counts as a connection toward your plan cap. Xero provides a Demo Company for testing (resets periodically; not valid for certification beta-customer counts). After connecting, list tenants via the connections endpoint and send xero-tenant-id on API calls.",
+      "owner": "you",
+      "url": "https://developer.xero.com/documentation/guides/oauth2/tenants/"
+    },
+    {
+      "n": 8,
+      "title": "Monitor connection count and upgrade plan",
+      "detail": "Connection counts and egress metering appear in the developer dashboard (My Apps). To exceed 5 connections add a credit card (moves to Core, up to 50). For Plus (1,000 connections, AUD 245/month) App Certification is a prerequisite; Advanced (10,000) also requires an initial and annual security assessment.",
+      "owner": "you",
+      "url": "https://developer.xero.com/pricing"
+    },
+    {
+      "n": 9,
+      "title": "Apply for App Certification (only if scaling beyond 50 connections)",
+      "detail": "Onboard at least 10 beta customers (not demo companies, with API calls made to their tenant in the last 30 days; raised from 3 to 10 in 2025), then submit the certification application. Checkpoints cover Connection, Branding and Naming, App Launcher, Scopes, Error handling, Data Integrity, Account and Payment mapping, Taxes. App Store listing is optional on Plus/Advanced and required on Enterprise.",
+      "owner": "you",
+      "url": "https://developer.xero.com/documentation/xero-app-store/app-partner-guides/certification-checkpoints"
+    }
+  ],
+  "requirements": [
+    "A Xero user login (free) to access developer.xero.com and create apps",
+    "Starter: no fee, max 5 connections. Core: AUD 35/month (tax excl.), 10 GB egress included, AUD 2.40/GB overage, credit card required, max 50 connections",
+    "Plus (AUD 245/month, max 1,000), Advanced (AUD 1,445/month, max 10,000): App Certification required; Advanced also requires security assessment (initial and annual)",
+    "Enterprise (unlimited connections): price on application, certification, security assessment and App Store listing required",
+    "Certification application requires 10 active, non-demo beta customer connections (as of May 2025 announcement)",
+    "App Partner programme (App Store partner) requirements per Xero PDF: be listed on the App Store, meet technical and security standards, reach 10k MRR growth via App Store, minimum 50 reviews with 4-star average, connected to App Launcher",
+    "Privacy policy and terms URLs are part of app details (per community guide)",
+    "Xero terms prohibit using API data to train AI/ML models; violations can lead to key revocation (reported by third-party blog)"
+  ],
+  "gotchas": [
+    "The old 'uncertified apps limited to 25 tenants' rule is superseded: Xero's current pricing page shows Starter capped at 5 connections and does not describe a separate uncertified rule. Do not assume 25.",
+    "Connection counts and egress are measured per app, not per developer; apps cannot share them. A separate custom auth config per Composio project with the same Xero app shares one count.",
+    "Connections are per Xero organisation, not per user: one user authorising 3 orgs uses 3 connections. Disconnected/inactive connections should be cleaned up to free capacity (Xero has a connection cleanup best-practice guide).",
+    "Access tokens expire after 30 minutes. Refresh tokens are single-use and rotate: store the new refresh token returned on each refresh. Unused refresh tokens expire after 60 days; a 30-minute grace period lets you retry the previous refresh token.",
+    "offline_access scope is required to receive refresh tokens (standard Xero behaviour; not re-confirmed on a docs page this session).",
+    "Granular scopes: apps created on or after 2 March 2026 get only granular scopes; accounting.transactions and accounting.reports.read are split into new scopes. Existing apps get granular scopes by end of April 2026 and must finish migrating by 13 September 2027.",
+    "Redirect URIs must be absolute, no wildcards, max 50.",
+    "Rate limits: 5 concurrent calls, 60 calls per minute per org, 1,000 calls/day/org on Starter or 5,000/day/org on Core and above, 10,000 calls/minute per app.",
+    "Custom Connection (machine-to-machine) apps are a premium option only for orgs in AU, NZ, UK and US, tied to a single org; not suitable for multi-tenant agent products.",
+    "Pricing is in AUD, billed by card on the 1st of the following month; the Starter to Core move happens when you add payment details to go beyond 5 connections.",
+    "Journals endpoint, Xero Practice Manager API and Bulk Connections are only on Advanced and above and need security assessment and use-case approval.",
+    "Xero retired the 15% App Store revenue-share (XASS/commercial billing) model; XASS customers had to be moved by 1 July 2026."
+  ],
+  "blockers": [
+    {
+      "blocker": "Hit the 5-connection cap on Starter",
+      "symptom": "Authorisation of a 6th organisation fails or is blocked; dashboard shows capped connections",
+      "whatToDo": "Add a credit card in the developer portal billing page to move to Core (50 connections, AUD 35/month), or remove inactive connections.",
+      "escalation": "https://developer.xero.com/contact"
+    },
+    {
+      "blocker": "Need more than 50 connections but not certified",
+      "symptom": "Connections are capped at the tier maximum until you meet that tier's requirements",
+      "whatToDo": "Onboard 10 active non-demo beta customers, pass the certification checkpoints, then move to Plus (AUD 245/month).",
+      "escalation": "https://developer.xero.com/contact"
+    },
+    {
+      "blocker": "Invalid scope error on authorisation",
+      "symptom": "Xero returns invalid_scope when old broad scopes (accounting.transactions) are requested by an app created on/after 2 March 2026, or when a misspelled/nonexistent granular scope is requested",
+      "whatToDo": "Use the granular scope names from Xero's scopes docs; for older apps migrate by 13 September 2027.",
+      "escalation": "https://devblog.xero.com/upcoming-changes-to-xero-accounting-api-scopes-705c5a9621a0"
+    },
+    {
+      "blocker": "Refresh token invalid (invalid_grant)",
+      "symptom": "Token refresh fails after 60 days of non-use or after a stale refresh token is reused outside the 30-minute grace period",
+      "whatToDo": "Always persist the latest refresh token; if expired, have the user reconnect.",
+      "escalation": null
+    },
+    {
+      "blocker": "Certification application locked or rejected",
+      "symptom": "Application form unavailable until beta customer threshold met; demo company or inactive connections do not count",
+      "whatToDo": "Ensure 10 real orgs have had API calls in the last 30 days, and satisfy each checkpoint before resubmitting.",
+      "escalation": "https://developer.xero.com/contact"
+    }
+  ],
+  "agentCanDo": [
+    "Explain the plan tiers and which one fits the expected number of connected organisations",
+    "Draft the exact redirect URI, scope list (granular scopes) and app details to enter",
+    "Create and configure the Composio custom auth config once client ID/secret are supplied",
+    "Test the flow, list tenants via the connections endpoint and handle xero-tenant-id selection",
+    "Implement refresh-token rotation handling and connection monitoring",
+    "Prepare the certification checkpoint checklist and track beta-customer activity"
+  ],
+  "youMustDo": [
+    "Log in to the Xero developer portal and create the app (account holder login, possible 2FA)",
+    "Accept Xero developer terms (including updated Terms applying since 2 March 2026)",
+    "Add a payment card to move beyond 5 connections (Core and above)",
+    "Authorise Xero organisations as an org user with sufficient rights during OAuth consent",
+    "Complete App Certification application, security assessment and any contracts for Plus/Advanced/Enterprise"
+  ],
+  "composio": {
+    "redirectUri": "https://backend.composio.dev/api/v3/toolkits/auth/callback",
+    "note": "Xero accepts an absolute https redirect URI with no wildcards, so Composio's callback can be registered directly (up to 50 URIs). Include offline_access in the scopes on the Composio auth config or tokens will not be refreshable. Apps created on/after 2 March 2026 must use granular scopes, so check Composio's default Xero scope list against them. Connection caps apply per Xero app, so all Composio users connected through your single custom auth config share the same 5/50/1,000 limit."
+  },
+  "evidence": [
+    {
+      "claim": "Pricing effective 2 March 2026: Starter 5 connections free; Core 50 connections AUD 35/month 10 GB egress; Plus 1,000 AUD 245; Advanced 10,000 AUD 1,445; Enterprise unlimited, price on application; overage AUD 2.40/GB",
+      "status": "verified",
+      "source": "https://developer.xero.com/pricing",
+      "note": "Also consistent with the FAQ page below"
+    },
+    {
+      "claim": "Plus requires App Certification; Advanced and Enterprise require certification and security assessment (initial and annual); Enterprise requires App Store listing; Starter/Core cannot list on App Store",
+      "status": "verified",
+      "source": "https://developer.xero.com/pricing",
+      "note": null
+    },
+    {
+      "claim": "Key dates: 4 Dec 2025 announcement and metering in dashboard; 2 Mar 2026 new plans take effect; mid-March migration of existing apps with at least 30 days notice; XASS migration deadline 1 July 2026",
+      "status": "verified",
+      "source": "https://developer.xero.com/faq/pricing-and-policy-updates",
+      "note": null
+    },
+    {
+      "claim": "New apps default to Starter; adding a 6th connection requires payment details which moves the app to Core; connections are capped at tier maximums until requirements met",
+      "status": "verified",
+      "source": "https://developer.xero.com/faq/pricing-and-policy-updates",
+      "note": null
+    },
+    {
+      "claim": "Rate limits: 5 concurrent, 60/minute, 1,000/day/org on Starter and 5,000/day/org on higher tiers, 10,000/minute per app",
+      "status": "verified",
+      "source": "https://developer.xero.com/faq/pricing-and-policy-updates",
+      "note": "The dedicated OAuth limits page is JS-rendered and its body could not be read"
+    },
+    {
+      "claim": "Credit card required for Core and above; billing on the 1st of the following month; connections and egress measured per app and not shared between apps",
+      "status": "verified",
+      "source": "https://developer.xero.com/pricing",
+      "note": null
+    },
+    {
+      "claim": "Granular scopes: new apps created on/after 2 March 2026 use only granular scopes; granular scopes available to request from April 2026, existing apps assigned by end of April 2026; migration deadline 13 September 2027; accounting.transactions and accounting.reports.read are split",
+      "status": "verified",
+      "source": "https://devblog.xero.com/upcoming-changes-to-xero-accounting-api-scopes-705c5a9621a0",
+      "note": "A reader comment reports accounting.journals.read returns Invalid scope and that balancesheet may be misspelled in the article; unverified"
+    },
+    {
+      "claim": "Access tokens expire after 30 minutes; unused refresh tokens expire after 60 days; refresh tokens rotate and a 30-minute grace period allows retrying the previous token",
+      "status": "verified",
+      "source": "https://developer.xero.com/faq/oauth2",
+      "note": null
+    },
+    {
+      "claim": "Redirect URIs must be absolute, wildcards not supported, up to 50 per app",
+      "status": "verified",
+      "source": "https://developer.xero.com/faq/oauth2",
+      "note": null
+    },
+    {
+      "claim": "Certification application requires 10 beta customers that are not demo companies and have had API calls in the last 30 days (raised from 3); announced 6 May 2025",
+      "status": "verified",
+      "source": "https://devblog.xero.com/update-app-certification-now-requiring-10-beta-customers-f07cff4bd103",
+      "note": "Could have changed after May 2025; no later page confirmed"
+    },
+    {
+      "claim": "Certification checkpoints: Connection, Branding and Naming, App Launcher, Scopes, Error handling, Data Integrity, Account and Payment mapping, Taxes",
+      "status": "verified",
+      "source": "https://developer.xero.com/documentation/xero-app-store/app-partner-guides/certification-checkpoints",
+      "note": "Only the list of checkpoint names was readable; the page body is JS-rendered"
+    },
+    {
+      "claim": "App Partner programme requirements (App Store listing, technical/security standards, subscription growth to $10k MRR, minimum 50 reviews 4-star average, App Launcher connected, find at least three customers to get certified)",
+      "status": "verified",
+      "source": "https://developer.xero.com/static/otherfiles/Grow-with-the-Xero-App-Store.pdf",
+      "note": "This PDF may predate the 2025/2026 changes (it says three customers, since raised to 10 and the revenue-share model has been retired); treat as dated"
+    },
+    {
+      "claim": "Old rule: uncertified apps limited to 25 tenants",
+      "status": "unverified",
+      "source": "https://developer.xero.com/static/otherfiles/Grow-with-the-Xero-App-Store.pdf",
+      "note": "Only implied by the PDF benefit 'connect more than 25 tenants'; current pricing page shows Starter at 5 and says nothing about 25. Treated as superseded."
+    },
+    {
+      "claim": "Xero FAQ: an org can have 2 uncertified apps plus unlimited custom connection apps; custom connections are for orgs in AU/NZ/UK/US; no charge when using a demo company",
+      "status": "verified",
+      "source": "https://developer.xero.com/faq",
+      "note": "The 2-uncertified-apps-per-org statement may relate to the older model; could not confirm it still applies"
+    },
+    {
+      "claim": "Annual security assessment typically takes about 5 working days, followed by 5 to 10 working days for review",
+      "status": "verified",
+      "source": "https://developer.xero.com/faq",
+      "note": "Applies to security assessment, not to initial app certification"
+    },
+    {
+      "claim": "Custom Connection integration type exists and is machine-to-machine for a single org",
+      "status": "inferred",
+      "source": "https://developer.xero.com/documentation/guides/oauth2/custom-connections/",
+      "note": "Page body is JS-rendered; only headings read (Setting up a Custom Connection, Purchasing Custom Connection subscriptions, Authorise the connection). Single-org nature inferred from FAQ and general knowledge."
+    },
+    {
+      "claim": "Web app creation flow: My Apps > New app, fields App name, Integration type Web app, Company URL, Redirect URI; client ID auto-generated and client secret via Generate new secret",
+      "status": "inferred",
+      "source": "https://developers.apideck.com/connectors/xero/docs/application_owner+oauth_credentials",
+      "note": "Third-party (Apideck) walkthrough, not an official Xero page; the Xero developer portal pages were not readable"
+    },
+    {
+      "claim": "App Certification submission needs at least 10 active customer connections, hence a paid tier is needed before applying",
+      "status": "inferred",
+      "source": "https://developers.apideck.com/connectors/xero/docs/application_owner+oauth_credentials",
+      "note": "Third-party; consistent with the official 10-beta-customer post and Starter cap of 5"
+    },
+    {
+      "claim": "Auth code flow steps include checking tenants you are authorised to access (connections endpoint) and refreshing tokens",
+      "status": "verified",
+      "source": "https://developer.xero.com/documentation/guides/oauth2/auth-flow/",
+      "note": "Only section headings were visible (1. Send user to authorize ... 5. Check the tenants you're authorized to access, 6. Call the API, Refreshing tokens); endpoint URLs and xero-tenant-id header detail come from general knowledge"
+    },
+    {
+      "claim": "offline_access scope is required to obtain refresh tokens; xero-tenant-id header is required on API calls; connections endpoint is GET https://api.xero.com/connections",
+      "status": "inferred",
+      "source": null,
+      "note": "Well-known Xero behaviour but the pages were not readable this session"
+    },
+    {
+      "claim": "Xero terms prohibit using API data to train AI/ML models, violations lead to API key revocation",
+      "status": "inferred",
+      "source": "https://truto.one/blog/xero-api-pricing-changes-2026-costs-tiers-and-how-to-minimize-egress/",
+      "note": "Third-party blog report; not confirmed on a Xero page. Relevant to AI-agent use cases and worth checking the Xero developer terms."
+    },
+    {
+      "claim": "Xero Demo Company exists for testing and resets periodically; demo companies do not count as beta customers",
+      "status": "inferred",
+      "source": "https://devblog.xero.com/update-app-certification-now-requiring-10-beta-customers-f07cff4bd103",
+      "note": "Non-demo requirement verified there; periodic reset is general knowledge"
+    }
+  ],
+  "uncertainties": [
+    "Several developer.xero.com documentation pages (OAuth overview, auth-flow, tenants, limits, custom connections, certification checkpoints, app partner features) are JS-rendered and only their headings were readable, so endpoint details, the scopes reference table and certification checkpoint contents were not confirmed on the page.",
+    "Whether any distinct 'uncertified app' limit (historically 25 tenants) still exists beyond the Starter 5-connection cap is not stated on the current pricing/FAQ pages; treated as superseded but not officially confirmed.",
+    "App Certification review timeline and the current certification application fee (if any) are not published on any page read; Xero appears to charge no separate certification fee beyond tier fees.",
+    "Whether the 10-beta-customer requirement (May 2025) is still current in October 2026 was not re-confirmed; a 2026 annual recertification process exists (devblog) but was not read.",
+    "Whether the Starter 5-connection cap is enforced as a hard block versus prompting for payment on the 6th authorisation was not confirmed in practice.",
+    "Exact granular scope strings and the accounting.journals.read issue were not verified against the official scopes reference.",
+    "Existing-app migration notice dates after mid-March 2026 were not checked."
+  ],
+  "lastChecked": "2026-10-20"
+}
